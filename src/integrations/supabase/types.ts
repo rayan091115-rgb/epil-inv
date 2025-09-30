@@ -14,7 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      equipment: {
+        Row: {
+          category: Database["public"]["Enums"]["equipment_category"]
+          created_at: string
+          date_achat: string | null
+          etat: Database["public"]["Enums"]["equipment_status"]
+          fin_garantie: string | null
+          id: string
+          marque: string | null
+          modele: string | null
+          notes: string | null
+          numero_serie: string | null
+          poste: string
+          qr_code: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["equipment_category"]
+          created_at?: string
+          date_achat?: string | null
+          etat?: Database["public"]["Enums"]["equipment_status"]
+          fin_garantie?: string | null
+          id?: string
+          marque?: string | null
+          modele?: string | null
+          notes?: string | null
+          numero_serie?: string | null
+          poste: string
+          qr_code?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["equipment_category"]
+          created_at?: string
+          date_achat?: string | null
+          etat?: Database["public"]["Enums"]["equipment_status"]
+          fin_garantie?: string | null
+          id?: string
+          marque?: string | null
+          modele?: string | null
+          notes?: string | null
+          numero_serie?: string | null
+          poste?: string
+          qr_code?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scan_history: {
+        Row: {
+          equipment_id: string | null
+          id: string
+          scanned_at: string
+          scanner_notes: string | null
+        }
+        Insert: {
+          equipment_id?: string | null
+          id?: string
+          scanned_at?: string
+          scanner_notes?: string | null
+        }
+        Update: {
+          equipment_id?: string | null
+          id?: string
+          scanned_at?: string
+          scanner_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_history_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +99,16 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      equipment_category:
+        | "PC"
+        | "Écran"
+        | "Clavier"
+        | "Souris"
+        | "Imprimante"
+        | "Switch"
+        | "Routeur"
+        | "Autre"
+      equipment_status: "OK" | "Panne" | "HS"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +235,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      equipment_category: [
+        "PC",
+        "Écran",
+        "Clavier",
+        "Souris",
+        "Imprimante",
+        "Switch",
+        "Routeur",
+        "Autre",
+      ],
+      equipment_status: ["OK", "Panne", "HS"],
+    },
   },
 } as const
