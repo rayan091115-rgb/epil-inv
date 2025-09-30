@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Equipment } from "@/types/equipment";
-import { storage } from "@/lib/storage";
 import { csvUtils } from "@/lib/csv-utils";
 import { qrGenerator } from "@/lib/qr-generator";
+import { useAuth } from "@/hooks/useAuth";
+import { useEquipment } from "@/hooks/useEquipment";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { EquipmentForm } from "@/components/EquipmentForm";
@@ -16,73 +18,39 @@ import {
   Plus, 
   Download, 
   Upload,
-  QrCode,
+  LogOut,
   ScanLine
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Index = () => {
-  const [equipment, setEquipment] = useState<Equipment[]>([]);
+  const navigate = useNavigate();
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { equipment, isLoading, addEquipment, updateEquipment, deleteEquipment } = useEquipment();
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    const data = storage.getAll();
-    setEquipment(data);
-  }, []);
-
-  const handleAddEquipment = async (data: Partial<Equipment>) => {
-    const newEquipment: Equipment = {
-      ...data,
-      id: crypto.randomUUID(),
-      poste: data.poste!,
-      category: data.category!,
-      etat: data.etat || "OK",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    } as Equipment;
-
-    // Générer le QR code
-    try {
-      const qrCode = await qrGenerator.generate(newEquipment.id);
-      newEquipment.qrCode = qrCode;
-    } catch (error) {
-      console.error("Error generating QR code:", error);
+    if (!authLoading && !user) {
+      navigate("/auth");
     }
+  }, [user, authLoading, navigate]);
 
-    storage.add(newEquipment);
-    setEquipment([...equipment, newEquipment]);
+  const handleAddEquipment = (data: Partial<Equipment>) => {
+    addEquipment(data);
     setShowForm(false);
-    toast({
-      title: "Matériel ajouté",
-      description: `${newEquipment.poste} a été ajouté à l'inventaire.`,
-    });
   };
 
   const handleUpdateEquipment = (data: Partial<Equipment>) => {
     if (!editingEquipment) return;
-
-    storage.update(editingEquipment.id, data);
-    setEquipment(
-      equipment.map((e) => (e.id === editingEquipment.id ? { ...e, ...data, updatedAt: new Date().toISOString() } : e))
-    );
+    updateEquipment({ id: editingEquipment.id, data });
     setEditingEquipment(null);
     setShowForm(false);
-    toast({
-      title: "Matériel mis à jour",
-      description: `${data.poste || editingEquipment.poste} a été mis à jour.`,
-    });
   };
 
   const handleDeleteEquipment = (id: string) => {
-    const item = equipment.find((e) => e.id === id);
-    storage.delete(id);
-    setEquipment(equipment.filter((e) => e.id !== id));
-    toast({
-      title: "Matériel supprimé",
-      description: `${item?.poste} a été supprimé de l'inventaire.`,
-    });
+    deleteEquipment(id);
   };
 
   const handleExportCSV = () => {
@@ -102,35 +70,13 @@ const Index = () => {
       const content = e.target?.result as string;
       const parsed = csvUtils.parseCSV(content);
       
-      const newEquipment: Equipment[] = [];
       for (const item of parsed) {
-        const newItem: Equipment = {
-          ...item,
-          id: crypto.randomUUID(),
-          poste: item.poste!,
-          category: item.category!,
-          etat: item.etat || "OK",
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        } as Equipment;
-
-        try {
-          const qrCode = await qrGenerator.generate(newItem.id);
-          newItem.qrCode = qrCode;
-        } catch (error) {
-          console.error("Error generating QR code:", error);
-        }
-
-        newEquipment.push(newItem);
+        addEquipment(item);
       }
-
-      const updated = [...equipment, ...newEquipment];
-      storage.save(updated);
-      setEquipment(updated);
       
       toast({
         title: "Import réussi",
-        description: `${newEquipment.length} équipement(s) importé(s).`,
+        description: `${parsed.length} équipement(s) importé(s).`,
       });
     };
     reader.readAsText(file);
@@ -144,12 +90,30 @@ const Index = () => {
     hs: equipment.filter((e) => e.etat === "HS").length,
   };
 
+  if (authLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Chargement...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-6 lg:p-8 max-w-7xl">
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">EPIL Inventaire</h1>
-          <p className="text-muted-foreground">Gestion du matériel informatique</p>
+        <header className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">EPIL Inventaire</h1>
+            <p className="text-muted-foreground">Gestion du matériel informatique</p>
+          </div>
+          <Button variant="outline" onClick={signOut}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Déconnexion
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -203,7 +167,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="scanner">
-            <QRScanner />
+            <QRScanner equipment={equipment} />
           </TabsContent>
         </Tabs>
 

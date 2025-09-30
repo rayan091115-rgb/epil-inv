@@ -5,13 +5,21 @@ import { Button } from "@/components/ui/button";
 import { Camera, CameraOff, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
+import { Equipment } from "@/types/equipment";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface ScannedItem {
   code: string;
   timestamp: string;
+  poste?: string;
+  found: boolean;
 }
 
-export const QRScanner = () => {
+interface QRScannerProps {
+  equipment: Equipment[];
+}
+
+export const QRScanner = ({ equipment }: QRScannerProps) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scannedItems, setScannedItems] = useState<ScannedItem[]>([]);
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -35,13 +43,25 @@ export const QRScanner = () => {
           );
 
           if (!alreadyScanned) {
+            // Extract equipment ID from URL
+            const equipmentId = decodedText.split('/').pop();
+            const foundEquipment = equipment.find((e) => e.id === equipmentId);
+            
             setScannedItems((prev) => [
               ...prev,
-              { code: decodedText, timestamp: new Date().toISOString() },
+              { 
+                code: decodedText, 
+                timestamp: new Date().toISOString(),
+                poste: foundEquipment?.poste,
+                found: !!foundEquipment,
+              },
             ]);
+            
             toast({
-              title: "QR Code détecté",
-              description: `Code: ${decodedText}`,
+              title: foundEquipment ? "Équipement détecté" : "QR Code inconnu",
+              description: foundEquipment 
+                ? `Poste: ${foundEquipment.poste}` 
+                : `Code: ${decodedText}`,
             });
           }
         },
@@ -73,8 +93,10 @@ export const QRScanner = () => {
 
   const exportResults = () => {
     const csv = [
-      "Code,Timestamp",
-      ...scannedItems.map((item) => `"${item.code}","${item.timestamp}"`),
+      "Poste,Présent,Code,Horodatage",
+      ...scannedItems.map((item) => 
+        `"${item.poste || 'Inconnu'}","${item.found ? 'Oui' : 'Non'}","${item.code}","${item.timestamp}"`
+      ),
     ].join("\n");
 
     const blob = new Blob([csv], { type: "text/csv" });
@@ -129,20 +151,35 @@ export const QRScanner = () => {
         />
 
         {scannedItems.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h3 className="font-semibold">Éléments scannés ({scannedItems.length})</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto rounded-lg border p-3">
-              {scannedItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2 rounded bg-muted"
-                >
-                  <span className="font-mono text-sm">{item.code}</span>
-                  <Badge variant="outline">
-                    {new Date(item.timestamp).toLocaleTimeString()}
-                  </Badge>
-                </div>
-              ))}
+            <div className="rounded-lg border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Poste</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Heure</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scannedItems.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">
+                        {item.poste || "Inconnu"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={item.found ? "default" : "destructive"}>
+                          {item.found ? "Présent" : "Non trouvé"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(item.timestamp).toLocaleTimeString()}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
         )}
