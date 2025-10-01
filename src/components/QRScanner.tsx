@@ -32,14 +32,15 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
       await html5QrCode.start(
         { facingMode: "environment" },
         {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
+          fps: 20,
+          qrbox: { width: 400, height: 400 },
+          aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Anti-doublon : vérifier si déjà scanné récemment
+          // Anti-doublon renforcé : vérifier si déjà scanné récemment (5 secondes)
           const alreadyScanned = scannedItems.some(
             (item) => item.code === decodedText && 
-            Date.now() - new Date(item.timestamp).getTime() < 3000
+            Date.now() - new Date(item.timestamp).getTime() < 5000
           );
 
           if (!alreadyScanned) {
@@ -120,7 +121,7 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
       <CardHeader>
         <CardTitle>Scanner QR</CardTitle>
         <CardDescription>
-          Scannez les QR codes du matériel pour vérifier la présence
+          Scannez les QR codes ou codes-barres du matériel pour vérifier la présence
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -147,7 +148,7 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
         <div
           id="qr-reader"
           className="rounded-lg overflow-hidden"
-          style={{ minHeight: isScanning ? "400px" : "0" }}
+          style={{ minHeight: isScanning ? "500px" : "0" }}
         />
 
         {scannedItems.length > 0 && (
