@@ -13,7 +13,31 @@ interface EquipmentFormProps {
   onCancel: () => void;
 }
 
-const categories: EquipmentCategory[] = ["PC", "Écran", "Clavier", "Souris", "Imprimante", "Switch", "Routeur", "Autre"];
+const categories: EquipmentCategory[] = [
+  "PC", 
+  "Serveur",
+  "Écran", 
+  "Clavier", 
+  "Souris", 
+  "Imprimante", 
+  "Switch", 
+  "Routeur",
+  "Processeur",
+  "Carte mère",
+  "RAM",
+  "Carte graphique",
+  "Disque dur",
+  "Alimentation",
+  "Onduleur",
+  "Boîtier",
+  "Ventilateur",
+  "Câble",
+  "Webcam",
+  "Casque",
+  "Microphone",
+  "Composant",
+  "Autre"
+];
 const statuses: EquipmentStatus[] = ["OK", "Panne", "HS"];
 
 export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormProps) => {

@@ -8,6 +8,21 @@ export type EquipmentCategory =
   | "Imprimante" 
   | "Switch" 
   | "Routeur"
+  | "Serveur"
+  | "Processeur"
+  | "Alimentation"
+  | "Onduleur"
+  | "Composant"
+  | "Câble"
+  | "Disque dur"
+  | "RAM"
+  | "Carte graphique"
+  | "Carte mère"
+  | "Boîtier"
+  | "Ventilateur"
+  | "Webcam"
+  | "Casque"
+  | "Microphone"
   | "Autre";
 
 export interface Equipment {

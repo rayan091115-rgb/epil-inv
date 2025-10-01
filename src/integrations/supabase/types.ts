@@ -108,6 +108,21 @@ export type Database = {
         | "Switch"
         | "Routeur"
         | "Autre"
+        | "Composant"
+        | "Processeur"
+        | "Alimentation"
+        | "Serveur"
+        | "Onduleur"
+        | "Câble"
+        | "Disque dur"
+        | "RAM"
+        | "Carte graphique"
+        | "Carte mère"
+        | "Boîtier"
+        | "Ventilateur"
+        | "Webcam"
+        | "Casque"
+        | "Microphone"
       equipment_status: "OK" | "Panne" | "HS"
     }
     CompositeTypes: {
@@ -245,6 +260,21 @@ export const Constants = {
         "Switch",
         "Routeur",
         "Autre",
+        "Composant",
+        "Processeur",
+        "Alimentation",
+        "Serveur",
+        "Onduleur",
+        "Câble",
+        "Disque dur",
+        "RAM",
+        "Carte graphique",
+        "Carte mère",
+        "Boîtier",
+        "Ventilateur",
+        "Webcam",
+        "Casque",
+        "Microphone",
       ],
       equipment_status: ["OK", "Panne", "HS"],
     },
