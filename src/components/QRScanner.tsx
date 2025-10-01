@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 interface ScannedItem {
   code: string;
   timestamp: string;
-  poste?: string;
+  equipment: Equipment | null;
   found: boolean;
 }
 
@@ -39,12 +39,13 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
         (decodedText) => {
           // Anti-doublon renforcé : vérifier si déjà scanné récemment (5 secondes)
           const alreadyScanned = scannedItems.some(
-            (item) => item.code === decodedText && 
-            Date.now() - new Date(item.timestamp).getTime() < 5000
+            (item) => 
+              item.code === decodedText && 
+              Date.now() - new Date(item.timestamp).getTime() < 5000
           );
 
           if (!alreadyScanned) {
-            // Extract equipment ID from URL
+            // Extraire l'ID de l'équipement depuis l'URL du QR code
             const equipmentId = decodedText.split('/').pop();
             const foundEquipment = equipment.find((e) => e.id === equipmentId);
             
@@ -53,7 +54,7 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
               { 
                 code: decodedText, 
                 timestamp: new Date().toISOString(),
-                poste: foundEquipment?.poste,
+                equipment: foundEquipment || null,
                 found: !!foundEquipment,
               },
             ]);
@@ -61,7 +62,7 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
             toast({
               title: foundEquipment ? "Équipement détecté" : "QR Code inconnu",
               description: foundEquipment 
-                ? `Poste: ${foundEquipment.poste}` 
+                ? `${foundEquipment.category} - ${foundEquipment.poste}` 
                 : `Code: ${decodedText}`,
             });
           }
@@ -94,13 +95,14 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
 
   const exportResults = () => {
     const csv = [
-      "Poste,Présent,Code,Horodatage",
-      ...scannedItems.map((item) => 
-        `"${item.poste || 'Inconnu'}","${item.found ? 'Oui' : 'Non'}","${item.code}","${item.timestamp}"`
-      ),
+      "Poste,Catégorie,Marque,Modèle,Numéro de série,État,Date d'achat,Fin garantie,Notes,Présent,Code,Horodatage",
+      ...scannedItems.map((item) => {
+        const eq = item.equipment;
+        return `"${eq?.poste || 'Inconnu'}","${eq?.category || ''}","${eq?.marque || ''}","${eq?.modele || ''}","${eq?.numeroSerie || ''}","${eq?.etat || ''}","${eq?.dateAchat || ''}","${eq?.finGarantie || ''}","${eq?.notes || ''}","${item.found ? 'Oui' : 'Non'}","${item.code}","${item.timestamp}"`;
+      }),
     ].join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -153,32 +155,75 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
 
         {scannedItems.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-semibold">Éléments scannés ({scannedItems.length})</h3>
+            <h3 className="font-semibold">
+              Éléments scannés ({scannedItems.length})
+            </h3>
             <div className="rounded-lg border overflow-hidden">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Poste</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Marque</TableHead>
+                    <TableHead>Modèle</TableHead>
+                    <TableHead>N° Série</TableHead>
+                    <TableHead>État</TableHead>
+                    <TableHead>Date achat</TableHead>
+                    <TableHead>Garantie</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead>Heure</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {scannedItems.map((item, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {item.poste || "Inconnu"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={item.found ? "default" : "destructive"}>
-                          {item.found ? "Présent" : "Non trouvé"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(item.timestamp).toLocaleTimeString()}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {scannedItems.map((item, index) => {
+                    const eq = item.equipment;
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {eq?.poste || "Inconnu"}
+                        </TableCell>
+                        <TableCell>{eq?.category || "-"}</TableCell>
+                        <TableCell>{eq?.marque || "-"}</TableCell>
+                        <TableCell>{eq?.modele || "-"}</TableCell>
+                        <TableCell>{eq?.numeroSerie || "-"}</TableCell>
+                        <TableCell>
+                          {eq?.etat ? (
+                            <Badge 
+                              variant={
+                                eq.etat === "OK" 
+                                  ? "default" 
+                                  : eq.etat === "Panne" 
+                                  ? "secondary" 
+                                  : "destructive"
+                              }
+                            >
+                              {eq.etat}
+                            </Badge>
+                          ) : (
+                            "-"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {eq?.dateAchat 
+                            ? new Date(eq.dateAchat).toLocaleDateString() 
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {eq?.finGarantie 
+                            ? new Date(eq.finGarantie).toLocaleDateString() 
+                            : "-"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={item.found ? "default" : "destructive"}>
+                            {item.found ? "Présent" : "Non trouvé"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {new Date(item.timestamp).toLocaleTimeString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
