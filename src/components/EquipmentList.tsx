@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Search, QrCode, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Edit, Trash2, Search, QrCode, Download, Eye } from "lucide-react";
 import { qrGenerator } from "@/lib/qr-generator";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 
 interface EquipmentListProps {
   equipment: Equipment[];
@@ -18,6 +19,7 @@ interface EquipmentListProps {
 export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProps) => {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("");
+  const [selectedQR, setSelectedQR] = useState<{ url: string; name: string } | null>(null);
 
   const filtered = equipment.filter((item) => {
     const matchesSearch =
@@ -31,19 +33,25 @@ export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProp
     return matchesSearch && matchesCategory;
   });
 
-  const handleDownloadQR = async (item: Equipment) => {
+  const handleViewQR = async (item: Equipment) => {
     try {
       const qrCode = await qrGenerator.generate(item.id);
-      qrGenerator.downloadQR(qrCode, `QR_${item.poste}`);
-      toast({
-        title: "QR Code téléchargé",
-        description: `Le QR code pour ${item.poste} a été téléchargé.`,
-      });
+      setSelectedQR({ url: qrCode, name: item.poste });
     } catch (error) {
       toast({
         title: "Erreur",
         description: "Impossible de générer le QR code",
         variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadQR = () => {
+    if (selectedQR) {
+      qrGenerator.downloadQR(selectedQR.url, `QR_${selectedQR.name}`);
+      toast({
+        title: "QR Code téléchargé",
+        description: `Le QR code pour ${selectedQR.name} a été téléchargé.`,
       });
     }
   };
@@ -108,10 +116,10 @@ export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProp
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleDownloadQR(item)}
-                          title="Télécharger QR"
+                          onClick={() => handleViewQR(item)}
+                          title="Voir le QR code"
                         >
-                          <QrCode className="h-4 w-4" />
+                          <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
@@ -138,6 +146,29 @@ export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProp
           </Table>
         </div>
       </CardContent>
+
+      <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>QR Code - {selectedQR?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {selectedQR && (
+              <>
+                <img 
+                  src={selectedQR.url} 
+                  alt={`QR Code for ${selectedQR.name}`}
+                  className="w-64 h-64 border rounded-lg"
+                />
+                <Button onClick={handleDownloadQR} className="w-full">
+                  <Download className="mr-2 h-4 w-4" />
+                  Télécharger le QR Code
+                </Button>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
