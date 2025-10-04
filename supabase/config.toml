@@ -1,1 +1,4 @@
 project_id = "eqnzuuefxcrydmqxselk"
+
+[functions.notify-equipment-added]
+verify_jwt = false
