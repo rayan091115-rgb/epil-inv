@@ -77,7 +77,7 @@ export const csvUtils = {
 
     const separator = detectSeparator(lines[0]);
 
-    // Split avec gestion des guillemets
+    // Split d'une ligne avec gestion des guillemets
     const splitLine = (line: string): string[] => {
       const values: string[] = [];
       let current = "";
@@ -108,16 +108,15 @@ export const csvUtils = {
       if (!line.trim()) continue;
 
       const values = splitLine(line);
-
-      const item: any = { category: "PC" };
+      const item: any = { category: "PC" }; // valeur par défaut
 
       headers.forEach((header, index) => {
         const raw = values[index] ?? "";
         const value = raw.replace(/"/g, "").trim();
 
-        // --- Mapping des headers vers les champs de Equipment ---
+        // --- Mapping des colonnes CSV vers les champs de Equipment ---
 
-        // ID (CSV export "pro")
+        // ID (format CSV "pro")
         if (header === "ID") {
           item.id = value;
 
@@ -145,7 +144,7 @@ export const csvUtils = {
         } else if (header.includes("RAM")) {
           item.ram = value;
 
-        // Capacité disque
+        // Capacité disque dur
         } else if (header.includes("DD") || header.toLowerCase().includes("capacité")) {
           item.capaciteDd = value;
 
@@ -178,7 +177,7 @@ export const csvUtils = {
         }
       });
 
-      // On n'ajoute que si un poste est défini
+      // On n'ajoute la ligne que si un "poste" est défini
       if (item.poste) {
         data.push(item);
       }
