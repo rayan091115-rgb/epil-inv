@@ -61,27 +61,46 @@ const Index = () => {
     });
   };
 
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const file = event.target.files?.[0];
+  if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const content = e.target?.result as string;
-      const parsed = csvUtils.parseCSV(content);
-      
-      for (const item of parsed) {
-        addEquipment(item);
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const content = e.target?.result as string;
+    const parsed = csvUtils.parseCSV(content);
+
+    let success = 0;
+    let failed = 0;
+
+    for (const [index, item] of parsed.entries()) {
+      try {
+        // Import séquentiel, on attend chaque insert
+        await addEquipmentAsync(item);
+        success++;
+      } catch (error) {
+        console.error(`Erreur d'import ligne ${index + 2}`, error);
+        failed++;
       }
-      
+    }
+
+    if (failed === 0) {
       toast({
         title: "Import réussi",
-        description: `${parsed.length} équipement(s) importé(s).`,
+        description: `${success} équipement(s) importé(s).`,
       });
-    };
-    reader.readAsText(file);
-    event.target.value = "";
+    } else {
+      toast({
+        title: "Import partiel",
+        description: `${success} équipement(s) importés, ${failed} en erreur. Regarde la console pour les détails.`,
+        variant: "destructive",
+      });
+    }
   };
+  reader.readAsText(file);
+  event.target.value = "";
+};
+
 
   const stats = {
     total: equipment.length,
