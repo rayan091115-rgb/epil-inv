@@ -11,6 +11,8 @@ import { EquipmentForm } from "@/components/EquipmentForm";
 import { EquipmentList } from "@/components/EquipmentList";
 import { QRScanner } from "@/components/QRScanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { qrGenerator } from "@/lib/qr-generator";
 import { 
   Package, 
   AlertTriangle, 
@@ -64,6 +66,100 @@ const Index = () => {
 const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
   const file = event.target.files?.[0];
   if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const content = e.target?.result as string;
+    const parsed = csvUtils.parseCSV(content);
+
+    // Fonctions utilitaires locales
+    const normalizeText = (v?: string) =>
+      v && v.trim() !== "" ? v.trim() : null;
+
+    const normalizeDate = (v?: string) => {
+      if (!v) return null;
+      const t = v.trim();
+      // on accepte uniquement YYYY-MM-DD, sinon on laisse NULL
+      if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+      return null;
+    };
+
+    let success = 0;
+    let failed = 0;
+
+    for (const [index, item] of parsed.entries()) {
+      try {
+        // Si pas de poste -> on skip (poste NOT NULL en base)
+        if (!item.poste || item.poste.trim() === "") {
+          console.warn(`Ligne ${index + 2} ignorée : poste vide`);
+          failed++;
+          continue;
+        }
+
+        const id = crypto.randomUUID();
+        const qrCode = await qrGenerator.generate(id);
+
+        const { error } = await supabase
+          .from("equipment")
+          .insert({
+            id,
+            poste: item.poste,
+            // On force les valeurs sûres pour éviter les enums invalides
+            category: "PC",                         // sécurisé
+            etat: "OK",                             // sécurisé
+            marque: normalizeText(item.marque),
+            modele: normalizeText(item.modele),
+            numero_serie: normalizeText(item.numeroSerie),
+            date_achat: normalizeDate(item.dateAchat),
+            fin_garantie: normalizeDate(item.finGarantie),
+            notes: normalizeText(item.notes),
+            qr_code: qrCode,
+            processeur: normalizeText(item.processeur),
+            ram: normalizeText(item.ram),
+            capacite_dd: normalizeText(item.capaciteDd),
+            alimentation: item.alimentation ?? true,
+            os: normalizeText(item.os),
+            adresse_mac: normalizeText(item.adresseMac),
+          })
+          .single();
+
+        if (error) {
+          console.error(
+            `Erreur d'insert Supabase ligne ${index + 2} :`,
+            error
+          );
+          failed++;
+        } else {
+          success++;
+        }
+      } catch (err) {
+        console.error(`Exception JS ligne ${index + 2} :`, err);
+        failed++;
+      }
+    }
+
+    // Résumé de l’import
+    if (failed === 0) {
+      toast({
+        title: "Import réussi",
+        description: `${success} équipement(s) importé(s).`,
+      });
+    } else {
+      toast({
+        title: "Import partiel",
+        description: `${success} équipement(s) importé(s), ${failed} en erreur. Regarde la console (F12) pour les détails.`,
+        variant: "destructive",
+      });
+    }
+
+    // On force un rafraîchissement de la liste en rechargeant la page
+    window.location.reload();
+  };
+
+  reader.readAsText(file);
+  // Reset input pour pouvoir ré-importer derrière
+  event.target.value = "";
+};
 
   const reader = new FileReader();
   reader.onload = async (e) => {
