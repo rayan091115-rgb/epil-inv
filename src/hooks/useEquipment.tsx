@@ -76,23 +76,12 @@ export const useEquipment = () => {
       if (error) throw error;
       return newEquipment;
     },
-    onSuccess: async (newEquipment) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["equipment"] });
       toast({
         title: "Matériel ajouté",
         description: "Le matériel a été ajouté avec succès.",
       });
-
-      // Notify n8n webhook
-      try {
-        await supabase.functions.invoke('notify-equipment-added', {
-          body: { equipmentId: newEquipment.id }
-        });
-        console.log('n8n notification sent successfully');
-      } catch (error) {
-        console.error('Failed to notify n8n:', error);
-        // Ne pas bloquer l'utilisateur si la notification échoue
-      }
     },
     onError: (error) => {
       toast({
