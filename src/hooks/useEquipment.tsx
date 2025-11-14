@@ -30,6 +30,12 @@ export const useEquipment = () => {
         finGarantie: item.fin_garantie,
         notes: item.notes,
         qrCode: item.qr_code,
+        processeur: item.processeur,
+        ram: item.ram,
+        capaciteDd: item.capacite_dd,
+        alimentation: item.alimentation,
+        os: item.os,
+        adresseMac: item.adresse_mac,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
       })) as Equipment[];
@@ -57,6 +63,12 @@ export const useEquipment = () => {
           fin_garantie: data.finGarantie,
           notes: data.notes,
           qr_code: qrCode,
+          processeur: data.processeur,
+          ram: data.ram,
+          capacite_dd: data.capaciteDd,
+          alimentation: data.alimentation,
+          os: data.os,
+          adresse_mac: data.adresseMac,
         })
         .select()
         .single();
@@ -107,6 +119,12 @@ export const useEquipment = () => {
           date_achat: data.dateAchat,
           fin_garantie: data.finGarantie,
           notes: data.notes,
+          processeur: data.processeur,
+          ram: data.ram,
+          capacite_dd: data.capaciteDd,
+          alimentation: data.alimentation,
+          os: data.os,
+          adresse_mac: data.adresseMac,
         })
         .eq("id", id);
 
