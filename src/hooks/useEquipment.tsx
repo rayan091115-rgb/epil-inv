@@ -42,64 +42,64 @@ export const useEquipment = () => {
     },
   });
 
- // Add equipment
-const addEquipment = useMutation({
-  mutationFn: async (data: Partial<Equipment>) => {
-    // Petite fonction utilitaire pour nettoyer les champs texte
-    const normalizeText = (v?: string) =>
-      v && v.trim() !== "" ? v.trim() : null;
+  // Add equipment
+  const addEquipment = useMutation({
+    mutationFn: async (data: Partial<Equipment>) => {
+      // Petite fonction utilitaire pour nettoyer les champs texte
+      const normalizeText = (v?: string) =>
+        v && v.trim() !== "" ? v.trim() : null;
 
-    // Les dates doivent être soit une string de date valide, soit null
-    const normalizeDate = (v?: string) =>
-      v && v.trim() !== "" ? v.trim() : null;
+      // Les dates doivent être soit une string de date valide, soit null
+      const normalizeDate = (v?: string) =>
+        v && v.trim() !== "" ? v.trim() : null;
 
-    // Generate QR code first
-    const tempId = crypto.randomUUID();
-    const qrCode = await qrGenerator.generate(tempId);
+      // Generate QR code first
+      const tempId = crypto.randomUUID();
+      const qrCode = await qrGenerator.generate(tempId);
 
-    const { data: newEquipment, error } = await supabase
-      .from("equipment")
-      .insert({
-        id: tempId,
-        poste: data.poste,                          // obligatoire
-        category: data.category,                    // "PC", "Écran", etc.
-        marque: normalizeText(data.marque),
-        modele: normalizeText(data.modele),
-        numero_serie: normalizeText(data.numeroSerie),
-        etat: (data.etat || "OK") as Equipment["etat"],
-        date_achat: normalizeDate(data.dateAchat),
-        fin_garantie: normalizeDate(data.finGarantie),
-        notes: normalizeText(data.notes),
-        qr_code: qrCode,
-        processeur: normalizeText(data.processeur),
-        ram: normalizeText(data.ram),
-        capacite_dd: normalizeText(data.capaciteDd),
-        alimentation: data.alimentation ?? true,
-        os: normalizeText(data.os),
-        adresse_mac: normalizeText(data.adresseMac),
-      })
-      .select()
-      .single();
+      const { data: newEquipment, error } = await supabase
+        .from("equipment")
+        .insert({
+          id: tempId,
+          poste: data.poste,                          // obligatoire
+          category: data.category,                    // "PC", "Écran", etc.
+          marque: normalizeText(data.marque),
+          modele: normalizeText(data.modele),
+          numero_serie: normalizeText(data.numeroSerie),
+          etat: (data.etat || "OK") as Equipment["etat"],
+          date_achat: normalizeDate(data.dateAchat),
+          fin_garantie: normalizeDate(data.finGarantie),
+          notes: normalizeText(data.notes),
+          qr_code: qrCode,
+          processeur: normalizeText(data.processeur),
+          ram: normalizeText(data.ram),
+          capacite_dd: normalizeText(data.capaciteDd),
+          alimentation: data.alimentation ?? true,
+          os: normalizeText(data.os),
+          adresse_mac: normalizeText(data.adresseMac),
+        })
+        .select()
+        .single();
 
-    if (error) throw error;
-    return newEquipment;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["equipment"] });
-    toast({
-      title: "Matériel ajouté",
-      description: "Le matériel a été ajouté avec succès.",
-    });
-  },
-  onError: (error) => {
-    toast({
-      title: "Erreur",
-      description: "Impossible d'ajouter le matériel.",
-      variant: "destructive",
-    });
-    console.error("Add equipment error:", error);
-  },
-});
+      if (error) throw error;
+      return newEquipment;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
+      toast({
+        title: "Matériel ajouté",
+        description: "Le matériel a été ajouté avec succès.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter le matériel.",
+        variant: "destructive",
+      });
+      console.error("Add equipment error:", error);
+    },
+  });
 
   // Update equipment
   const updateEquipment = useMutation({
@@ -169,6 +169,7 @@ const addEquipment = useMutation({
     equipment,
     isLoading,
     addEquipment: addEquipment.mutate,
+    addEquipmentAsync: addEquipment.mutateAsync, // ✅ on l’expose pour l’import CSV
     updateEquipment: updateEquipment.mutate,
     deleteEquipment: deleteEquipment.mutate,
   };
