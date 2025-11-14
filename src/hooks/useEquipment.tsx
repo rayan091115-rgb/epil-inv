@@ -42,56 +42,64 @@ export const useEquipment = () => {
     },
   });
 
-  // Add equipment
-  const addEquipment = useMutation({
-    mutationFn: async (data: Partial<Equipment>) => {
-      // Generate QR code first
-      const tempId = crypto.randomUUID();
-      const qrCode = await qrGenerator.generate(tempId);
+ // Add equipment
+const addEquipment = useMutation({
+  mutationFn: async (data: Partial<Equipment>) => {
+    // Petite fonction utilitaire pour nettoyer les champs texte
+    const normalizeText = (v?: string) =>
+      v && v.trim() !== "" ? v.trim() : null;
 
-      const { data: newEquipment, error } = await supabase
-        .from("equipment")
-        .insert({
-          id: tempId,
-          poste: data.poste,
-          category: data.category,
-          marque: data.marque,
-          modele: data.modele,
-          numero_serie: data.numeroSerie,
-          etat: data.etat || "OK",
-          date_achat: data.dateAchat,
-          fin_garantie: data.finGarantie,
-          notes: data.notes,
-          qr_code: qrCode,
-          processeur: data.processeur,
-          ram: data.ram,
-          capacite_dd: data.capaciteDd,
-          alimentation: data.alimentation,
-          os: data.os,
-          adresse_mac: data.adresseMac,
-        })
-        .select()
-        .single();
+    // Les dates doivent être soit une string de date valide, soit null
+    const normalizeDate = (v?: string) =>
+      v && v.trim() !== "" ? v.trim() : null;
 
-      if (error) throw error;
-      return newEquipment;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast({
-        title: "Matériel ajouté",
-        description: "Le matériel a été ajouté avec succès.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le matériel.",
-        variant: "destructive",
-      });
-      console.error("Add equipment error:", error);
-    },
-  });
+    // Generate QR code first
+    const tempId = crypto.randomUUID();
+    const qrCode = await qrGenerator.generate(tempId);
+
+    const { data: newEquipment, error } = await supabase
+      .from("equipment")
+      .insert({
+        id: tempId,
+        poste: data.poste,                          // obligatoire
+        category: data.category,                    // "PC", "Écran", etc.
+        marque: normalizeText(data.marque),
+        modele: normalizeText(data.modele),
+        numero_serie: normalizeText(data.numeroSerie),
+        etat: (data.etat || "OK") as Equipment["etat"],
+        date_achat: normalizeDate(data.dateAchat),
+        fin_garantie: normalizeDate(data.finGarantie),
+        notes: normalizeText(data.notes),
+        qr_code: qrCode,
+        processeur: normalizeText(data.processeur),
+        ram: normalizeText(data.ram),
+        capacite_dd: normalizeText(data.capaciteDd),
+        alimentation: data.alimentation ?? true,
+        os: normalizeText(data.os),
+        adresse_mac: normalizeText(data.adresseMac),
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return newEquipment;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["equipment"] });
+    toast({
+      title: "Matériel ajouté",
+      description: "Le matériel a été ajouté avec succès.",
+    });
+  },
+  onError: (error) => {
+    toast({
+      title: "Erreur",
+      description: "Impossible d'ajouter le matériel.",
+      variant: "destructive",
+    });
+    console.error("Add equipment error:", error);
+  },
+});
 
   // Update equipment
   const updateEquipment = useMutation({
