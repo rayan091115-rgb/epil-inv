@@ -54,7 +54,10 @@ export const csvUtils = {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.setAttribute("href", url);
-    link.setAttribute("download", `${filename}_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `${filename}_${new Date().toISOString().split("T")[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -64,20 +67,27 @@ export const csvUtils = {
     const lines = csvContent.split("\n").filter((line) => line.trim());
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
-    const data: Partial<Equipment>[] = [];
+    // Détection automatique du séparateur ("," ou ";")
+    const detectSeparator = (line: string): string => {
+      const commaCount = (line.match(/,/g) || []).length;
+      const semicolonCount = (line.match(/;/g) || []).length;
+      if (semicolonCount > commaCount) return ";";
+      return ",";
+    };
 
-    for (let i = 1; i < lines.length; i++) {
-      // Handle CSV parsing with proper quote handling
+    const separator = detectSeparator(lines[0]);
+
+    // Split avec gestion des guillemets
+    const splitLine = (line: string): string[] => {
       const values: string[] = [];
       let current = "";
       let inQuotes = false;
-      
-      for (let j = 0; j < lines[i].length; j++) {
-        const char = lines[i][j];
+
+      for (let j = 0; j < line.length; j++) {
+        const char = line[j];
         if (char === '"') {
           inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
+        } else if (char === separator && !inQuotes) {
           values.push(current.trim());
           current = "";
         } else {
@@ -85,38 +95,76 @@ export const csvUtils = {
         }
       }
       values.push(current.trim());
+      return values;
+    };
+
+    const headers = splitLine(lines[0]).map((h) =>
+      h.trim().replace(/"/g, "")
+    );
+    const data: Partial<Equipment>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line.trim()) continue;
+
+      const values = splitLine(line);
 
       const item: any = { category: "PC" };
 
       headers.forEach((header, index) => {
-        const value = values[index]?.replace(/"/g, "").trim() || "";
-        
-        // Match headers from the CSV file
-        if (header.includes("Numéro attribué") || header === "Poste") {
+        const raw = values[index] ?? "";
+        const value = raw.replace(/"/g, "").trim();
+
+        // --- Mapping des headers vers les champs de Equipment ---
+
+        // ID (CSV export "pro")
+        if (header === "ID") {
+          item.id = value;
+
+        // Poste (formulaire ou format pro)
+        } else if (header.includes("Numéro attribué") || header === "Poste") {
           item.poste = value;
+
+        // Marque + modèle combinés (Google Forms)
         } else if (header.includes("marque et le modèle")) {
-          // Split "marque et modèle" into separate fields
           const parts = value.split(" ");
           item.marque = parts[0] || value;
           item.modele = parts.slice(1).join(" ") || value;
+
+        // Marque / Modèle séparés (CSV pro)
         } else if (header === "Marque") {
           item.marque = value;
         } else if (header === "Modèle") {
           item.modele = value;
+
+        // Processeur
         } else if (header.includes("Processeur")) {
           item.processeur = value;
+
+        // RAM
         } else if (header.includes("RAM")) {
           item.ram = value;
-        } else if (header.includes("DD") || header.includes("capacité")) {
+
+        // Capacité disque
+        } else if (header.includes("DD") || header.toLowerCase().includes("capacité")) {
           item.capaciteDd = value;
-        } else if (header.includes("alimentation")) {
-          item.alimentation = value.toLowerCase().includes("oui") || value.toLowerCase().includes("yes");
+
+        // Alimentation (Oui/Non, Yes/No)
+        } else if (header.toLowerCase().includes("alimentation")) {
+          const v = value.toLowerCase();
+          item.alimentation = v.includes("oui") || v.includes("yes");
+
+        // OS
         } else if (header.includes("OS")) {
           item.os = value;
-        } else if (header.includes("MAC")) {
+
+        // Adresse MAC
+        } else if (header.toLowerCase().includes("mac")) {
           item.adresseMac = value;
+
+        // Catégorie, numéro de série, état, dates, notes
         } else if (header === "Catégorie") {
-          item.category = value;
+          item.category = value || "PC";
         } else if (header === "N° Série") {
           item.numeroSerie = value;
         } else if (header === "État") {
@@ -130,7 +178,7 @@ export const csvUtils = {
         }
       });
 
-      // Only add items that have at least a poste
+      // On n'ajoute que si un poste est défini
       if (item.poste) {
         data.push(item);
       }
