@@ -12,6 +12,12 @@ export const csvUtils = {
       "État",
       "Date Achat",
       "Fin Garantie",
+      "Processeur",
+      "RAM",
+      "Capacité DD",
+      "Alimentation",
+      "OS",
+      "Adresse MAC",
       "Notes",
     ];
 
@@ -25,6 +31,12 @@ export const csvUtils = {
       e.etat,
       e.dateAchat || "",
       e.finGarantie || "",
+      e.processeur || "",
+      e.ram || "",
+      e.capaciteDd || "",
+      e.alimentation ? "Oui" : "Non",
+      e.os || "",
+      e.adresseMac || "",
       e.notes || "",
     ]);
 
@@ -56,43 +68,70 @@ export const csvUtils = {
     const data: Partial<Equipment>[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",").map((v) => v.trim().replace(/"/g, ""));
-      const item: any = {};
+      // Handle CSV parsing with proper quote handling
+      const values: string[] = [];
+      let current = "";
+      let inQuotes = false;
+      
+      for (let j = 0; j < lines[i].length; j++) {
+        const char = lines[i][j];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+
+      const item: any = { category: "PC" };
 
       headers.forEach((header, index) => {
-        const value = values[index] || "";
-        switch (header) {
-          case "Poste":
-            item.poste = value;
-            break;
-          case "Catégorie":
-            item.category = value;
-            break;
-          case "Marque":
-            item.marque = value;
-            break;
-          case "Modèle":
-            item.modele = value;
-            break;
-          case "N° Série":
-            item.numeroSerie = value;
-            break;
-          case "État":
-            item.etat = value as any;
-            break;
-          case "Date Achat":
-            item.dateAchat = value;
-            break;
-          case "Fin Garantie":
-            item.finGarantie = value;
-            break;
-          case "Notes":
-            item.notes = value;
-            break;
+        const value = values[index]?.replace(/"/g, "").trim() || "";
+        
+        // Match headers from the CSV file
+        if (header.includes("Numéro attribué") || header === "Poste") {
+          item.poste = value;
+        } else if (header.includes("marque et le modèle")) {
+          // Split "marque et modèle" into separate fields
+          const parts = value.split(" ");
+          item.marque = parts[0] || value;
+          item.modele = parts.slice(1).join(" ") || value;
+        } else if (header === "Marque") {
+          item.marque = value;
+        } else if (header === "Modèle") {
+          item.modele = value;
+        } else if (header.includes("Processeur")) {
+          item.processeur = value;
+        } else if (header.includes("RAM")) {
+          item.ram = value;
+        } else if (header.includes("DD") || header.includes("capacité")) {
+          item.capaciteDd = value;
+        } else if (header.includes("alimentation")) {
+          item.alimentation = value.toLowerCase().includes("oui") || value.toLowerCase().includes("yes");
+        } else if (header.includes("OS")) {
+          item.os = value;
+        } else if (header.includes("MAC")) {
+          item.adresseMac = value;
+        } else if (header === "Catégorie") {
+          item.category = value;
+        } else if (header === "N° Série") {
+          item.numeroSerie = value;
+        } else if (header === "État") {
+          item.etat = value as any;
+        } else if (header === "Date Achat") {
+          item.dateAchat = value;
+        } else if (header === "Fin Garantie") {
+          item.finGarantie = value;
+        } else if (header === "Notes") {
+          item.notes = value;
         }
       });
 
-      if (item.poste && item.category) {
+      // Only add items that have at least a poste
+      if (item.poste) {
         data.push(item);
       }
     }
