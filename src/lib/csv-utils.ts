@@ -1,3 +1,31 @@
+toast({
+  title: "Erreur",
+  description: "Impossible d'ajouter le matériel.",
+  variant: "destructive",
+});
+``` :contentReference[oaicite:7]{index=7}  
+
+Et comme tu fais ça **pour chaque ligne du CSV**, tu te retrouves avec le même toast qui se répète.
+
+---
+
+## ✅ Ce qu’il faut corriger
+
+On ne va plus envoyer de chaînes vides `""` pour les dates (et d’autres champs optionnels).  
+On va :
+
+- convertir `""` → `undefined` → Supabase ne les envoie pas → DB met `NULL` (OK).
+- éventuellement normaliser un peu les dates si un jour tu tapes `14/11/2025` dans Excel.
+
+On corrige ça **dans `csv-utils.ts`**, au niveau de `parseCSV`.
+
+---
+
+## 🟢 FICHIER `src/lib/csv-utils.ts` COMPLET À COPIER-COLLER
+
+Remplace **tout le contenu** de `src/lib/csv-utils.ts` par ceci :
+
+```ts
 import { Equipment } from "@/types/equipment";
 
 export const csvUtils = {
@@ -77,7 +105,30 @@ export const csvUtils = {
 
     const separator = detectSeparator(lines[0]);
 
-    // Split d'une ligne avec gestion des guillemets
+    // Normalisation des dates vers "YYYY-MM-DD" ou undefined
+    const normalizeDate = (val: string): string | undefined => {
+      if (!val) return undefined;
+      const trimmed = val.trim();
+
+      // format déjà OK
+      if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        return trimmed;
+      }
+
+      // formats du style 14/11/2025 ou 14-11-2025
+      const m = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m) {
+        const d = m[1].padStart(2, "0");
+        const mo = m[2].padStart(2, "0");
+        const y = m[3];
+        return `${y}-${mo}-${d}`;
+      }
+
+      // Format inconnu -> on ne prend pas le risque de casser l'insert
+      return undefined;
+    };
+
+    // Split avec gestion des guillemets
     const splitLine = (line: string): string[] => {
       const values: string[] = [];
       let current = "";
@@ -108,17 +159,18 @@ export const csvUtils = {
       if (!line.trim()) continue;
 
       const values = splitLine(line);
-      const item: any = { category: "PC" }; // valeur par défaut
+
+      const item: any = { category: "PC" };
 
       headers.forEach((header, index) => {
         const raw = values[index] ?? "";
         const value = raw.replace(/"/g, "").trim();
 
-        // --- Mapping des colonnes CSV vers les champs de Equipment ---
+        // --- Mapping des headers vers les champs de Equipment ---
 
-        // ID (format CSV "pro")
+        // ID (CSV export "pro")
         if (header === "ID") {
-          item.id = value;
+          item.id = value || undefined;
 
         // Poste (formulaire ou format pro)
         } else if (header.includes("Numéro attribué") || header === "Poste") {
@@ -127,26 +179,26 @@ export const csvUtils = {
         // Marque + modèle combinés (Google Forms)
         } else if (header.includes("marque et le modèle")) {
           const parts = value.split(" ");
-          item.marque = parts[0] || value;
-          item.modele = parts.slice(1).join(" ") || value;
+          item.marque = (parts[0] || "").trim() || undefined;
+          item.modele = parts.slice(1).join(" ").trim() || undefined;
 
         // Marque / Modèle séparés (CSV pro)
         } else if (header === "Marque") {
-          item.marque = value;
+          item.marque = value || undefined;
         } else if (header === "Modèle") {
-          item.modele = value;
+          item.modele = value || undefined;
 
         // Processeur
         } else if (header.includes("Processeur")) {
-          item.processeur = value;
+          item.processeur = value || undefined;
 
         // RAM
         } else if (header.includes("RAM")) {
-          item.ram = value;
+          item.ram = value || undefined;
 
-        // Capacité disque dur
+        // Capacité disque
         } else if (header.includes("DD") || header.toLowerCase().includes("capacité")) {
-          item.capaciteDd = value;
+          item.capaciteDd = value || undefined;
 
         // Alimentation (Oui/Non, Yes/No)
         } else if (header.toLowerCase().includes("alimentation")) {
@@ -155,29 +207,29 @@ export const csvUtils = {
 
         // OS
         } else if (header.includes("OS")) {
-          item.os = value;
+          item.os = value || undefined;
 
         // Adresse MAC
         } else if (header.toLowerCase().includes("mac")) {
-          item.adresseMac = value;
+          item.adresseMac = value || undefined;
 
         // Catégorie, numéro de série, état, dates, notes
         } else if (header === "Catégorie") {
           item.category = value || "PC";
         } else if (header === "N° Série") {
-          item.numeroSerie = value;
+          item.numeroSerie = value || undefined;
         } else if (header === "État") {
-          item.etat = value as any;
+          item.etat = (value as any) || undefined;
         } else if (header === "Date Achat") {
-          item.dateAchat = value;
+          item.dateAchat = normalizeDate(value);
         } else if (header === "Fin Garantie") {
-          item.finGarantie = value;
+          item.finGarantie = normalizeDate(value);
         } else if (header === "Notes") {
-          item.notes = value;
+          item.notes = value || undefined;
         }
       });
 
-      // On n'ajoute la ligne que si un "poste" est défini
+      // On n'ajoute que si un poste est défini (obligatoire en DB)
       if (item.poste) {
         data.push(item);
       }
