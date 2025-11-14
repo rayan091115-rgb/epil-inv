@@ -27,7 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { equipment, isLoading, addEquipment, updateEquipment, deleteEquipment } = useEquipment();
+  const { equipment, isLoading, addEquipment, addEquipmentAsync, updateEquipment, deleteEquipment } = useEquipment();
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [showForm, setShowForm] = useState(false);
 
