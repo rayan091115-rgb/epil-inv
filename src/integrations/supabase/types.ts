@@ -16,6 +16,9 @@ export type Database = {
     Tables: {
       equipment: {
         Row: {
+          adresse_mac: string | null
+          alimentation: boolean | null
+          capacite_dd: string | null
           category: Database["public"]["Enums"]["equipment_category"]
           created_at: string
           date_achat: string | null
@@ -26,11 +29,17 @@ export type Database = {
           modele: string | null
           notes: string | null
           numero_serie: string | null
+          os: string | null
           poste: string
+          processeur: string | null
           qr_code: string | null
+          ram: string | null
           updated_at: string
         }
         Insert: {
+          adresse_mac?: string | null
+          alimentation?: boolean | null
+          capacite_dd?: string | null
           category: Database["public"]["Enums"]["equipment_category"]
           created_at?: string
           date_achat?: string | null
@@ -41,11 +50,17 @@ export type Database = {
           modele?: string | null
           notes?: string | null
           numero_serie?: string | null
+          os?: string | null
           poste: string
+          processeur?: string | null
           qr_code?: string | null
+          ram?: string | null
           updated_at?: string
         }
         Update: {
+          adresse_mac?: string | null
+          alimentation?: boolean | null
+          capacite_dd?: string | null
           category?: Database["public"]["Enums"]["equipment_category"]
           created_at?: string
           date_achat?: string | null
@@ -56,8 +71,11 @@ export type Database = {
           modele?: string | null
           notes?: string | null
           numero_serie?: string | null
+          os?: string | null
           poste?: string
+          processeur?: string | null
           qr_code?: string | null
+          ram?: string | null
           updated_at?: string
         }
         Relationships: []
