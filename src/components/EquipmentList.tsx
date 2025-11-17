@@ -14,9 +14,10 @@ interface EquipmentListProps {
   equipment: Equipment[];
   onEdit: (equipment: Equipment) => void;
   onDelete: (id: string) => void;
+  onEquipmentClick?: (equipment: Equipment) => void;
 }
 
-export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProps) => {
+export const EquipmentList = ({ equipment, onEdit, onDelete, onEquipmentClick }: EquipmentListProps) => {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("");
   const [selectedQR, setSelectedQR] = useState<{ url: string; name: string } | null>(null);
@@ -104,7 +105,7 @@ export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProp
                 </TableRow>
               ) : (
                 filtered.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow key={item.id} className="cursor-pointer hover:bg-muted/50" onClick={() => onEquipmentClick?.(item)}>
                     <TableCell className="font-medium">{item.poste}</TableCell>
                     <TableCell>{item.category}</TableCell>
                     <TableCell>{item.marque || "-"}</TableCell>
@@ -112,7 +113,7 @@ export const EquipmentList = ({ equipment, onEdit, onDelete }: EquipmentListProp
                     <TableCell className="font-mono text-sm">{item.numeroSerie || "-"}</TableCell>
                     <TableCell>{getStatusBadge(item.etat)}</TableCell>
                     <TableCell>
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           size="sm"
                           variant="ghost"
