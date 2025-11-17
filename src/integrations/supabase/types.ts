@@ -80,6 +80,75 @@ export type Database = {
         }
         Relationships: []
       }
+      permissions: {
+        Row: {
+          can_create: boolean | null
+          can_delete: boolean | null
+          can_read: boolean | null
+          can_update: boolean | null
+          created_at: string | null
+          id: string
+          resource: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource: string
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          can_create?: boolean | null
+          can_delete?: boolean | null
+          can_read?: boolean | null
+          can_update?: boolean | null
+          created_at?: string | null
+          id?: string
+          resource?: string
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          last_login: string | null
+          login_count: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_login?: string | null
+          login_count?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          last_login?: string | null
+          login_count?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       scan_history: {
         Row: {
           equipment_id: string | null
@@ -109,14 +178,95 @@ export type Database = {
           },
         ]
       }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      log_admin_credentials: {
+        Args: { admin_email: string; admin_password: string }
+        Returns: Json
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
       equipment_category:
         | "PC"
         | "Écran"
@@ -269,6 +419,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
       equipment_category: [
         "PC",
         "Écran",

@@ -172,6 +172,12 @@ const Index = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {isAdmin && (
+              <Button variant="default" size="sm" onClick={() => navigate("/admin")}>
+                <Shield className="h-4 w-4 mr-2" />
+                Dashboard Admin
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="h-4 w-4 mr-2" />
               Déconnexion
