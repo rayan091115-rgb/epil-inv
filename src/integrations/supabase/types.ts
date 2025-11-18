@@ -25,6 +25,7 @@ export type Database = {
           etat: Database["public"]["Enums"]["equipment_status"]
           fin_garantie: string | null
           id: string
+          location_id: string | null
           marque: string | null
           modele: string | null
           notes: string | null
@@ -46,6 +47,7 @@ export type Database = {
           etat?: Database["public"]["Enums"]["equipment_status"]
           fin_garantie?: string | null
           id?: string
+          location_id?: string | null
           marque?: string | null
           modele?: string | null
           notes?: string | null
@@ -67,6 +69,7 @@ export type Database = {
           etat?: Database["public"]["Enums"]["equipment_status"]
           fin_garantie?: string | null
           id?: string
+          location_id?: string | null
           marque?: string | null
           modele?: string | null
           notes?: string | null
@@ -78,7 +81,83 @@ export type Database = {
           ram?: string | null
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      locations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
         Relationships: []
+      }
+      maintenance_logs: {
+        Row: {
+          actions_effectuees: string | null
+          created_at: string | null
+          description_probleme: string
+          equipment_id: string
+          id: string
+          report_date: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          actions_effectuees?: string | null
+          created_at?: string | null
+          description_probleme: string
+          equipment_id: string
+          id?: string
+          report_date?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          actions_effectuees?: string | null
+          created_at?: string | null
+          description_probleme?: string
+          equipment_id?: string
+          id?: string
+          report_date?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_logs_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permissions: {
         Row: {

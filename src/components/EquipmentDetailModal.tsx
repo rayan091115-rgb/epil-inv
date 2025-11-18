@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar, User, FileText, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MaintenanceTab } from "@/components/equipment/MaintenanceTab";
+import { PhotosTab } from "@/components/equipment/PhotosTab";
 
 interface EquipmentDetailModalProps {
   equipment: Equipment | null;
@@ -44,9 +46,10 @@ export const EquipmentDetailModal = ({
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details">Détails</TabsTrigger>
             <TabsTrigger value="history">Historique</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
             <TabsTrigger value="photos">Photos</TabsTrigger>
           </TabsList>
 
@@ -207,20 +210,12 @@ export const EquipmentDetailModal = ({
             </Card>
           </TabsContent>
 
+          <TabsContent value="maintenance">
+            <MaintenanceTab equipmentId={equipment.id} />
+          </TabsContent>
+
           <TabsContent value="photos">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  Photos
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  Fonctionnalité de gestion des photos à venir
-                </p>
-              </CardContent>
-            </Card>
+            <PhotosTab equipmentId={equipment.id} />
           </TabsContent>
         </Tabs>
       </DialogContent>

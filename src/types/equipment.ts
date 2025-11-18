@@ -37,6 +37,7 @@ export interface Equipment {
   finGarantie?: string;
   notes?: string;
   qrCode?: string;
+  locationId?: string;
   // PC-specific fields
   processeur?: string;
   ram?: string;
