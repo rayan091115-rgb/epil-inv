@@ -296,7 +296,9 @@ const Index = () => {
                 {editingEquipment ? "Modifier le matériel" : "Ajouter du matériel"}
               </DialogTitle>
             </DialogHeader>
+            {/* CORRECTION ICI : L'ajout de la 'key' force le composant à se recréer proprement à chaque ouverture */}
             <EquipmentForm
+              key={editingEquipment ? editingEquipment.id : "new-equipment"}
               equipment={editingEquipment}
               onSubmit={editingEquipment ? handleUpdateEquipment : handleAddEquipment}
               onCancel={() => {
