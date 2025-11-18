@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { useLocations } from "@/hooks/useLocations";
 
 interface EquipmentFormProps {
   equipment?: Equipment;
@@ -42,6 +43,7 @@ const categories: EquipmentCategory[] = [
 const statuses: EquipmentStatus[] = ["OK", "Panne", "HS"];
 
 export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormProps) => {
+  const { locations } = useLocations();
   const [formData, setFormData] = useState<Partial<Equipment>>({
     poste: equipment?.poste || "",
     category: equipment?.category || "PC",
@@ -52,6 +54,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
     dateAchat: equipment?.dateAchat || "",
     finGarantie: equipment?.finGarantie || "",
     notes: equipment?.notes || "",
+    locationId: equipment?.locationId || "",
     processeur: equipment?.processeur || "",
     ram: equipment?.ram || "",
     capaciteDd: equipment?.capaciteDd || "",
@@ -244,6 +247,26 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                   {statuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Emplacement</Label>
+              <Select
+                value={formData.locationId}
+                onValueChange={(value) => setFormData({ ...formData, locationId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un emplacement..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Non assigné</SelectItem>
+                  {locations.map((location) => (
+                    <SelectItem key={location.id} value={location.id}>
+                      {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
