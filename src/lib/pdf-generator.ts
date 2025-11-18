@@ -15,7 +15,6 @@ export const generateA4QRSheet = async (
   equipmentList: Equipment[],
   baseUrl: string = "http://epil.local/equip/"
 ): Promise<void> => {
-  // 1. Générer tous les QR codes
   const labels: QRLabel[] = await Promise.all(
     equipmentList.map(async (equipment) => ({
       qrCode: await qrGenerator.generate(equipment.id, baseUrl),
@@ -26,13 +25,11 @@ export const generateA4QRSheet = async (
     }))
   );
 
-  // 2. Découper en pages
   const pages: QRLabel[][] = [];
   for (let i = 0; i < labels.length; i += ITEMS_PER_PAGE) {
     pages.push(labels.slice(i, i + ITEMS_PER_PAGE));
   }
 
-  // 3. Construire le HTML
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -60,11 +57,9 @@ export const generateA4QRSheet = async (
         .sheet {
           width: 210mm;
           height: 297mm;
-          /* MARGES AGRANDIES : 15mm haut/bas, 5mm gauche/droite */
-          padding: 15mm 5mm; 
+          padding: 12mm 5mm; 
           display: grid;
           grid-template-columns: repeat(4, 50mm); 
-          /* HAUTEUR RÉDUITE : (297 - 30) / 8 = ~33.3mm par ligne */
           grid-template-rows: repeat(8, 33.3mm); 
           page-break-after: always;
           margin: 0 auto; 
