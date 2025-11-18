@@ -15,19 +15,18 @@ export const generateA4QRSheet = async (
   equipmentList: Equipment[],
   baseUrl: string = "http://epil.local/equip/"
 ): Promise<void> => {
-  // 1. Générer tous les QR codes pour tout l'inventaire
-  // On ne limite plus avec .slice(), on prend tout.
+  // 1. Générer tous les QR codes
   const labels: QRLabel[] = await Promise.all(
     equipmentList.map(async (equipment) => ({
       qrCode: await qrGenerator.generate(equipment.id, baseUrl),
       poste: equipment.poste,
-      id: equipment.id.slice(0, 8), // ID court pour l'affichage
+      id: equipment.id.slice(0, 8),
       category: equipment.category,
       etat: equipment.etat,
     }))
   );
 
-  // 2. Découper en pages de 32 étiquettes
+  // 2. Découper en pages
   const pages: QRLabel[][] = [];
   for (let i = 0; i < labels.length; i += ITEMS_PER_PAGE) {
     pages.push(labels.slice(i, i + ITEMS_PER_PAGE));
@@ -43,7 +42,7 @@ export const generateA4QRSheet = async (
       <style>
         @page {
           size: A4 portrait;
-          margin: 0; /* On gère les marges manuellement dans le body/sheet */
+          margin: 0;
         }
         
         * {
@@ -61,14 +60,13 @@ export const generateA4QRSheet = async (
         .sheet {
           width: 210mm;
           height: 297mm;
-          padding: 5mm; /* Marge extérieure 5mm */
+          /* MARGES AGRANDIES : 15mm haut/bas, 5mm gauche/droite */
+          padding: 15mm 5mm; 
           display: grid;
-          /* 4 colonnes de 50mm */
           grid-template-columns: repeat(4, 50mm); 
-          /* 8 lignes de ~35.8mm (ajusté pour tenir dans 287mm dispos sans saut de page) */
-          grid-template-rows: repeat(8, 35.8mm); 
+          /* HAUTEUR RÉDUITE : (297 - 30) / 8 = ~33.3mm par ligne */
+          grid-template-rows: repeat(8, 33.3mm); 
           page-break-after: always;
-          /* Centrage de la grille dans la page si l'imprimante ajoute des marges */
           margin: 0 auto; 
         }
 
@@ -78,13 +76,13 @@ export const generateA4QRSheet = async (
         
         .label {
           width: 50mm;
-          height: 35.8mm; /* Correspond à la hauteur de ligne */
-          border: 0.2mm solid #ccc; /* Bordure fine pour visualiser la découpe */
+          height: 33.3mm; /* Nouvelle hauteur */
+          border: 0.2mm solid #ccc;
           border-radius: 3mm;
-          padding: 3mm; /* Marge interne de sécurité */
+          padding: 2mm; /* Padding interne légèrement réduit */
           
           display: flex;
-          flex-direction: row; /* QR à gauche, Texte à droite ou inversement, ici on centre tout */
+          flex-direction: row;
           align-items: center;
           justify-content: center;
           gap: 2mm;
@@ -95,8 +93,8 @@ export const generateA4QRSheet = async (
         }
         
         .qr-container {
-          width: 28mm;
-          height: 28mm;
+          width: 26mm; /* QR code un peu plus petit pour tenir */
+          height: 26mm;
           flex-shrink: 0;
           display: flex;
           align-items: center;
@@ -107,7 +105,7 @@ export const generateA4QRSheet = async (
           width: 100%;
           height: 100%;
           object-fit: contain;
-          image-rendering: pixelated; /* Pour garder le QR net */
+          image-rendering: pixelated;
         }
         
         .info-container {
@@ -141,7 +139,6 @@ export const generateA4QRSheet = async (
           margin-top: 1mm;
         }
 
-        /* Status Badge visual indicator */
         .status-dot {
           position: absolute;
           top: 2mm;
@@ -198,18 +195,14 @@ export const generateA4QRSheet = async (
     </html>
   `;
 
-  // 4. Ouvrir la fenêtre d'impression
   const printWindow = window.open("", "_blank");
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
 
-    // Attendre le chargement des images avant de lancer l'impression
     printWindow.onload = () => {
       setTimeout(() => {
         printWindow.print();
-        // Optionnel : fermer après impression
-        // printWindow.close();
       }, 500);
     };
   }
