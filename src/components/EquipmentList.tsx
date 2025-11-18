@@ -1,335 +1,225 @@
-import { useState, useEffect } from "react";
-import { Equipment, EquipmentCategory, EquipmentStatus } from "@/types/equipment";
+import { useState, useMemo, memo, useCallback } from "react";
+import { Equipment } from "@/types/equipment";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { Edit, Trash2, Search, QrCode, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { qrGenerator } from "@/lib/qr-generator";
+import { toast } from "@/components/ui/use-toast";
 
-interface EquipmentFormProps {
-  equipment?: Equipment | null;
-  onSubmit: (equipment: Partial<Equipment>) => void;
-  onCancel: () => void;
+interface EquipmentListProps {
+  equipment: Equipment[];
+  onEdit: (equipment: Equipment) => void;
+  onDelete: (id: string) => void;
+  onEquipmentClick?: (equipment: Equipment) => void;
 }
 
-const categories: EquipmentCategory[] = [
-  "PC", 
-  "Serveur",
-  "Écran", 
-  "Clavier", 
-  "Souris", 
-  "Imprimante", 
-  "Switch", 
-  "Routeur",
-  "Processeur",
-  "Carte mère",
-  "RAM",
-  "Carte graphique",
-  "Disque dur",
-  "Alimentation",
-  "Onduleur",
-  "Boîtier",
-  "Ventilateur",
-  "Câble",
-  "Webcam",
-  "Casque",
-  "Microphone",
-  "Composant",
-  "Autre"
-];
-const statuses: EquipmentStatus[] = ["OK", "Panne", "HS"];
+const ITEMS_PER_PAGE = 25;
 
-export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormProps) => {
-  const defaultData: Partial<Equipment> = {
-    poste: "",
-    category: "PC",
-    marque: "",
-    modele: "",
-    numeroSerie: "",
-    etat: "OK",
-    dateAchat: "",
-    finGarantie: "",
-    notes: "",
-    processeur: "",
-    ram: "",
-    capaciteDd: "",
-    alimentation: true,
-    os: "",
-    adresseMac: "",
-  };
+export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipmentClick }: EquipmentListProps) => {
+  const [search, setSearch] = useState("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedQR, setSelectedQR] = useState<{ url: string; name: string } | null>(null);
 
-  const [formData, setFormData] = useState<Partial<Equipment>>(defaultData);
+  const safeEquipment = Array.isArray(equipment) ? equipment : [];
 
-  // CORRECTION : Synchroniser le formulaire quand l'équipement change
-  useEffect(() => {
-    if (equipment) {
-      setFormData({
-        poste: equipment.poste || "",
-        category: equipment.category || "PC",
-        marque: equipment.marque || "",
-        modele: equipment.modele || "",
-        numeroSerie: equipment.numeroSerie || "",
-        etat: equipment.etat || "OK",
-        dateAchat: equipment.dateAchat || "",
-        finGarantie: equipment.finGarantie || "",
-        notes: equipment.notes || "",
-        processeur: equipment.processeur || "",
-        ram: equipment.ram || "",
-        capaciteDd: equipment.capaciteDd || "",
-        alimentation: equipment.alimentation ?? true,
-        os: equipment.os || "",
-        adresseMac: equipment.adresseMac || "",
+  const categories = useMemo(() => {
+    const cats = new Set(safeEquipment.map((e) => e.category));
+    return Array.from(cats).sort();
+  }, [safeEquipment]);
+
+  const filtered = useMemo(() => {
+    return safeEquipment.filter((item) => {
+      const matchesSearch =
+        (item.poste?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.marque?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.modele?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.numeroSerie?.toLowerCase() || "").includes(search.toLowerCase());
+
+      const matchesCategory = filterCategory === "all" || !filterCategory || item.category === filterCategory;
+      const matchesStatus = filterStatus === "all" || !filterStatus || item.etat === filterStatus;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [safeEquipment, search, filterCategory, filterStatus]);
+
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filtered.slice(start, start + ITEMS_PER_PAGE);
+  }, [filtered, currentPage]);
+
+  const handleViewQR = useCallback(async (item: Equipment) => {
+    try {
+      const qrCode = await qrGenerator.generate(item.id);
+      setSelectedQR({ url: qrCode, name: item.poste });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer le QR code",
+        variant: "destructive",
       });
-    } else {
-      setFormData(defaultData);
     }
-  }, [equipment]);
+  }, []);
 
-  const isPCCategory = formData.category === "PC";
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.poste || !formData.category) {
-      return;
+  const handleDownloadQR = useCallback(() => {
+    if (selectedQR) {
+      qrGenerator.downloadQR(selectedQR.url, `QR_${selectedQR.name}`);
+      toast({
+        title: "QR Code téléchargé",
+        description: `Le QR code pour ${selectedQR.name} a été téléchargé.`,
+      });
     }
-    
-    // Nettoyage des données
-    const cleanedData = {
-      ...formData,
-      marque: formData.marque?.trim() || undefined,
-      modele: formData.modele?.trim() || undefined,
-      numeroSerie: formData.numeroSerie?.trim() || undefined,
-      dateAchat: formData.dateAchat || undefined,
-      finGarantie: formData.finGarantie || undefined,
-      notes: formData.notes?.trim() || undefined,
-      processeur: formData.processeur?.trim() || undefined,
-      ram: formData.ram?.trim() || undefined,
-      capaciteDd: formData.capaciteDd?.trim() || undefined,
-      os: formData.os?.trim() || undefined,
-      adresseMac: formData.adresseMac?.trim() || undefined,
+  }, [selectedQR]);
+
+  const getStatusBadge = useCallback((status: string) => {
+    const variants: Record<string, "default" | "destructive" | "secondary"> = {
+      OK: "default",
+      Panne: "secondary",
+      HS: "destructive",
     };
-    
-    onSubmit(cleanedData);
-  };
-
-  const handleBarcodeScanned = (code: string) => {
-    setFormData(prev => ({ ...prev, numeroSerie: code }));
-  };
+    return <Badge variant={variants[status] || "default"}>{status}</Badge>;
+  }, []);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{equipment ? "Modifier le matériel" : "Ajouter un matériel"}</CardTitle>
-        <CardDescription>
-          Les champs marqués d'un * sont obligatoires
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="poste">Numéro attribué au {isPCCategory ? 'PC' : 'matériel'} *</Label>
-              <Input
-                id="poste"
-                value={formData.poste}
-                onChange={(e) => setFormData({ ...formData, poste: e.target.value })}
-                placeholder="Ex: PC135"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="category">Catégorie *</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value as EquipmentCategory })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="marque">Marque {isPCCategory ? '*' : '(optionnel)'}</Label>
-              <Input
-                id="marque"
-                value={formData.marque}
-                onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
-                placeholder="Ex: HP, Dell, Lenovo..."
-                required={isPCCategory}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="modele">Modèle {isPCCategory ? '*' : '(optionnel)'}</Label>
-              <Input
-                id="modele"
-                value={formData.modele}
-                onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
-                placeholder="Ex: ThinkCentre, Compaq 6200..."
-                required={isPCCategory}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="numeroSerie">Numéro de série (optionnel)</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="numeroSerie"
-                  value={formData.numeroSerie}
-                  onChange={(e) => setFormData({ ...formData, numeroSerie: e.target.value })}
-                  placeholder="Scanner ou saisir manuellement"
-                />
-                <BarcodeScanner onScan={handleBarcodeScanned} />
-              </div>
-            </div>
-
-            {isPCCategory && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="processeur">Type du Processeur *</Label>
-                  <Input
-                    id="processeur"
-                    value={formData.processeur}
-                    onChange={(e) => setFormData({ ...formData, processeur: e.target.value })}
-                    placeholder="Ex: i3-4130, Intel Pentium..."
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ram">RAM installée *</Label>
-                  <Input
-                    id="ram"
-                    value={formData.ram}
-                    onChange={(e) => setFormData({ ...formData, ram: e.target.value })}
-                    placeholder="Ex: 4G, 8G, 2x2GB DDR3..."
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="capaciteDd">Capacité du DD *</Label>
-                  <Input
-                    id="capaciteDd"
-                    value={formData.capaciteDd}
-                    onChange={(e) => setFormData({ ...formData, capaciteDd: e.target.value })}
-                    placeholder="Ex: 500GB, 250Go..."
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="alimentation">Alimentation *</Label>
-                  <Select
-                    value={formData.alimentation ? "oui" : "non"}
-                    onValueChange={(value) => setFormData({ ...formData, alimentation: value === "oui" })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="oui">Oui</SelectItem>
-                      <SelectItem value="non">Non</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="os">OS installé *</Label>
-                  <Input
-                    id="os"
-                    value={formData.os}
-                    onChange={(e) => setFormData({ ...formData, os: e.target.value })}
-                    placeholder="Ex: Windows 10, Windows 7, Linux..."
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="adresseMac">Adresse MAC *</Label>
-                  <Input
-                    id="adresseMac"
-                    value={formData.adresseMac}
-                    onChange={(e) => setFormData({ ...formData, adresseMac: e.target.value })}
-                    placeholder="Ex: 44-8A-0D-96-C6"
-                    required
-                  />
-                </div>
-              </>
-            )}
-
-            <div className="space-y-2">
-              <Label htmlFor="etat">État *</Label>
-              <Select
-                value={formData.etat}
-                onValueChange={(value) => setFormData({ ...formData, etat: value as EquipmentStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statuses.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dateAchat">Date d'achat (optionnel)</Label>
-              <Input
-                id="dateAchat"
-                type="date"
-                value={formData.dateAchat}
-                onChange={(e) => setFormData({ ...formData, dateAchat: e.target.value })}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="finGarantie">Fin de garantie (optionnel)</Label>
-              <Input
-                id="finGarantie"
-                type="date"
-                value={formData.finGarantie}
-                onChange={(e) => setFormData({ ...formData, finGarantie: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes (optionnel)</Label>
-            <Textarea
-              id="notes"
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Notes supplémentaires..."
-              rows={3}
+        <CardTitle>Inventaire du matériel ({filtered.length})</CardTitle>
+        <div className="flex flex-col sm:flex-row gap-3 mt-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+              className="pl-10"
             />
           </div>
+          <Select value={filterCategory} onValueChange={(v) => { setFilterCategory(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Catégorie" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="État" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="OK">OK</SelectItem>
+              <SelectItem value="Panne">Panne</SelectItem>
+              <SelectItem value="HS">HS</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Poste</TableHead>
+                <TableHead>Catégorie</TableHead>
+                <TableHead>Marque</TableHead>
+                <TableHead>État</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {paginatedItems.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                    Aucun matériel trouvé
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedItems.map((item) => (
+                  <TableRow 
+                    key={item.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => onEquipmentClick?.(item)}
+                  >
+                    <TableCell className="font-medium">{item.poste}</TableCell>
+                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.marque || "-"}</TableCell>
+                    <TableCell>{getStatusBadge(item.etat)}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Button size="icon" variant="ghost" onClick={() => handleViewQR(item)}>
+                          <QrCode className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => onDelete(item.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-          <div className="flex gap-2 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Annuler
-            </Button>
-            <Button type="submit">
-              {equipment ? "Mettre à jour" : "Ajouter"}
-            </Button>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between mt-4">
+            <p className="text-sm text-muted-foreground">
+              Page {currentPage} sur {totalPages}
+            </p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </form>
+        )}
       </CardContent>
+
+      <Dialog open={!!selectedQR} onOpenChange={() => setSelectedQR(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>QR Code - {selectedQR?.name}</DialogTitle>
+          </DialogHeader>
+          {selectedQR && (
+            <div className="space-y-4">
+              <img src={selectedQR.url} alt={`QR code`} className="w-full max-w-md mx-auto" />
+              <Button onClick={handleDownloadQR} className="w-full">
+                <Download className="h-4 w-4 mr-2" />
+                Télécharger
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
-};
+});
+
+EquipmentList.displayName = "EquipmentList";
