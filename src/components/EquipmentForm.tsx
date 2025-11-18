@@ -64,9 +64,6 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.poste || !formData.category) {
-      return;
-    }
     
     // Clean up empty strings to undefined for optional fields
     const cleanedData = {
@@ -96,25 +93,24 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
       <CardHeader>
         <CardTitle>{equipment ? "Modifier le matériel" : "Ajouter un matériel"}</CardTitle>
         <CardDescription>
-          Les champs marqués d'un * sont obligatoires
+          Tous les champs sont optionnels
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="poste">Numéro attribué au {isPCCategory ? 'PC' : 'matériel'} *</Label>
+              <Label htmlFor="poste">Numéro attribué au {isPCCategory ? 'PC' : 'matériel'}</Label>
               <Input
                 id="poste"
                 value={formData.poste}
                 onChange={(e) => setFormData({ ...formData, poste: e.target.value })}
                 placeholder="Ex: PC135"
-                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Catégorie *</Label>
+              <Label htmlFor="category">Catégorie</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value as EquipmentCategory })}
@@ -133,24 +129,22 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="marque">Marque {isPCCategory ? '*' : '(optionnel)'}</Label>
+              <Label htmlFor="marque">Marque</Label>
               <Input
                 id="marque"
                 value={formData.marque}
                 onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
                 placeholder="Ex: HP, Dell, Lenovo..."
-                required={isPCCategory}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="modele">Modèle {isPCCategory ? '*' : '(optionnel)'}</Label>
+              <Label htmlFor="modele">Modèle</Label>
               <Input
                 id="modele"
                 value={formData.modele}
                 onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
                 placeholder="Ex: ThinkCentre, Compaq 6200..."
-                required={isPCCategory}
               />
             </div>
 
@@ -170,40 +164,37 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
             {isPCCategory && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="processeur">Type du Processeur *</Label>
+                  <Label htmlFor="processeur">Type du Processeur</Label>
                   <Input
                     id="processeur"
                     value={formData.processeur}
                     onChange={(e) => setFormData({ ...formData, processeur: e.target.value })}
                     placeholder="Ex: i3-4130, Intel Pentium..."
-                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ram">RAM installée *</Label>
+                  <Label htmlFor="ram">RAM installée</Label>
                   <Input
                     id="ram"
                     value={formData.ram}
                     onChange={(e) => setFormData({ ...formData, ram: e.target.value })}
                     placeholder="Ex: 4G, 8G, 2x2GB DDR3..."
-                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="capaciteDd">Capacité du DD *</Label>
+                  <Label htmlFor="capaciteDd">Capacité du DD</Label>
                   <Input
                     id="capaciteDd"
                     value={formData.capaciteDd}
                     onChange={(e) => setFormData({ ...formData, capaciteDd: e.target.value })}
                     placeholder="Ex: 500GB, 250Go..."
-                    required
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="alimentation">Alimentation *</Label>
+              <div className="space-y-2">
+                <Label htmlFor="alimentation">Alimentation</Label>
                   <Select
                     value={formData.alimentation ? "oui" : "non"}
                     onValueChange={(value) => setFormData({ ...formData, alimentation: value === "oui" })}
@@ -219,31 +210,29 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="os">OS installé *</Label>
+                  <Label htmlFor="os">OS installé</Label>
                   <Input
                     id="os"
                     value={formData.os}
                     onChange={(e) => setFormData({ ...formData, os: e.target.value })}
                     placeholder="Ex: Windows 10, Windows 7, Linux..."
-                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="adresseMac">Adresse MAC *</Label>
+                  <Label htmlFor="adresseMac">Adresse MAC</Label>
                   <Input
                     id="adresseMac"
                     value={formData.adresseMac}
                     onChange={(e) => setFormData({ ...formData, adresseMac: e.target.value })}
                     placeholder="Ex: 44-8A-0D-96-C6"
-                    required
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="etat">État *</Label>
+              <Label htmlFor="etat">État</Label>
               <Select
                 value={formData.etat}
                 onValueChange={(value) => setFormData({ ...formData, etat: value as EquipmentStatus })}
