@@ -9,177 +9,207 @@ interface QRLabel {
   etat: string;
 }
 
+const ITEMS_PER_PAGE = 32; // 4 colonnes * 8 lignes
+
 export const generateA4QRSheet = async (
   equipmentList: Equipment[],
   baseUrl: string = "http://epil.local/equip/"
 ): Promise<void> => {
-  // Take first 16 equipment
-  const selectedEquipment = equipmentList.slice(0, 16);
-  
-  // Generate QR codes for all equipment
+  // 1. Générer tous les QR codes pour tout l'inventaire
+  // On ne limite plus avec .slice(), on prend tout.
   const labels: QRLabel[] = await Promise.all(
-    selectedEquipment.map(async (equipment) => ({
+    equipmentList.map(async (equipment) => ({
       qrCode: await qrGenerator.generate(equipment.id, baseUrl),
       poste: equipment.poste,
-      id: equipment.id.slice(0, 8),
+      id: equipment.id.slice(0, 8), // ID court pour l'affichage
       category: equipment.category,
       etat: equipment.etat,
     }))
   );
 
-  // Create HTML for printing
+  // 2. Découper en pages de 32 étiquettes
+  const pages: QRLabel[][] = [];
+  for (let i = 0; i < labels.length; i += ITEMS_PER_PAGE) {
+    pages.push(labels.slice(i, i + ITEMS_PER_PAGE));
+  }
+
+  // 3. Construire le HTML
   const htmlContent = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>Étiquettes QR - ${new Date().toLocaleDateString()}</title>
+      <title>Inventaire QR - ${new Date().toLocaleDateString()}</title>
       <style>
         @page {
-          size: A4;
-          margin: 10mm;
+          size: A4 portrait;
+          margin: 0; /* On gère les marges manuellement dans le body/sheet */
         }
         
         * {
-          margin: 0;
-          padding: 0;
           box-sizing: border-box;
         }
         
         body {
+          margin: 0;
+          padding: 0;
+          background: white;
           font-family: Arial, sans-serif;
-          width: 210mm;
-          height: 297mm;
-          padding: 5mm;
+          -webkit-print-color-adjust: exact;
         }
         
         .sheet {
-          width: 100%;
-          height: 100%;
+          width: 210mm;
+          height: 297mm;
+          padding: 5mm; /* Marge extérieure 5mm */
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          grid-template-rows: repeat(4, 1fr);
-          gap: 2mm;
-          position: relative;
+          /* 4 colonnes de 50mm */
+          grid-template-columns: repeat(4, 50mm); 
+          /* 8 lignes de ~35.8mm (ajusté pour tenir dans 287mm dispos sans saut de page) */
+          grid-template-rows: repeat(8, 35.8mm); 
+          page-break-after: always;
+          /* Centrage de la grille dans la page si l'imprimante ajoute des marges */
+          margin: 0 auto; 
         }
-        
-        /* Vertical center divider */
-        .sheet::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 50%;
-          width: 1px;
-          height: 100%;
-          background: #000;
-          border-left: 2px dashed #666;
-          z-index: 10;
+
+        .sheet:last-child {
+          page-break-after: auto;
         }
         
         .label {
-          border: 1px solid #ddd;
-          padding: 3mm;
+          width: 50mm;
+          height: 35.8mm; /* Correspond à la hauteur de ligne */
+          border: 0.2mm solid #ccc; /* Bordure fine pour visualiser la découpe */
+          border-radius: 3mm;
+          padding: 3mm; /* Marge interne de sécurité */
+          
           display: flex;
-          flex-direction: column;
+          flex-direction: row; /* QR à gauche, Texte à droite ou inversement, ici on centre tout */
           align-items: center;
           justify-content: center;
-          text-align: center;
+          gap: 2mm;
+          
+          overflow: hidden;
+          position: relative;
           background: white;
-          page-break-inside: avoid;
         }
         
-        .qr-code {
-          width: 35mm;
-          height: 35mm;
-          margin-bottom: 2mm;
+        .qr-container {
+          width: 28mm;
+          height: 28mm;
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
         
-        .qr-code img {
+        .qr-container img {
           width: 100%;
           height: 100%;
           object-fit: contain;
+          image-rendering: pixelated; /* Pour garder le QR net */
+        }
+        
+        .info-container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: flex-start;
+          text-align: left;
+          height: 100%;
+          overflow: hidden;
         }
         
         .poste {
-          font-size: 10pt;
+          font-size: 9pt;
           font-weight: bold;
           margin-bottom: 1mm;
-          word-wrap: break-word;
-          max-width: 100%;
+          white-space: nowrap;
         }
         
-        .info {
+        .meta {
           font-size: 7pt;
+          color: #333;
+          line-height: 1.2;
+        }
+        
+        .id-tag {
+          font-family: monospace;
+          font-size: 6pt;
           color: #666;
-          line-height: 1.3;
-        }
-        
-        .etat {
-          font-size: 7pt;
-          padding: 1mm 2mm;
-          border-radius: 2mm;
           margin-top: 1mm;
         }
-        
-        .etat-ok {
-          background: #d4edda;
-          color: #155724;
+
+        /* Status Badge visual indicator */
+        .status-dot {
+          position: absolute;
+          top: 2mm;
+          right: 2mm;
+          width: 3mm;
+          height: 3mm;
+          border-radius: 50%;
         }
-        
-        .etat-panne {
-          background: #fff3cd;
-          color: #856404;
-        }
-        
-        .etat-hs {
-          background: #f8d7da;
-          color: #721c24;
-        }
-        
-        @media print {
-          body {
-            margin: 0;
-            padding: 5mm;
-          }
-          
-          .sheet {
-            page-break-after: avoid;
-          }
-        }
+        .status-OK { background-color: #22c55e; }
+        .status-Panne { background-color: #eab308; }
+        .status-HS { background-color: #ef4444; }
+
       </style>
     </head>
     <body>
-      <div class="sheet">
-        ${labels
-          .map(
-            (label) => `
-          <div class="label">
-            <div class="qr-code">
-              <img src="${label.qrCode}" alt="QR Code ${label.poste}" />
+      ${pages
+        .map(
+          (pageItems) => `
+        <div class="sheet">
+          ${pageItems
+            .map(
+              (label) => `
+            <div class="label">
+              <div class="status-dot status-${label.etat}"></div>
+              
+              <div class="qr-container">
+                <img src="${label.qrCode}" />
+              </div>
+              
+              <div class="info-container">
+                <div class="poste">${label.poste}</div>
+                <div class="meta">${label.category}</div>
+                <div class="meta">${label.etat}</div>
+                <div class="id-tag">#${label.id}</div>
+              </div>
             </div>
-            <div class="poste">${label.poste}</div>
-            <div class="info">${label.category}</div>
-            <div class="info">ID: ${label.id}</div>
-            <div class="etat etat-${label.etat.toLowerCase()}">${label.etat}</div>
-          </div>
-        `
-          )
-          .join("")}
-      </div>
+          `
+            )
+            .join("")}
+            
+            ${Array(ITEMS_PER_PAGE - pageItems.length)
+              .fill(0)
+              .map(
+                () => `
+              <div class="label" style="border: 0.2mm dashed #eee;"></div>
+            `
+              )
+              .join("")}
+        </div>
+      `
+        )
+        .join("")}
     </body>
     </html>
   `;
 
-  // Open print window
+  // 4. Ouvrir la fenêtre d'impression
   const printWindow = window.open("", "_blank");
   if (printWindow) {
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    
-    // Wait for images to load before printing
+
+    // Attendre le chargement des images avant de lancer l'impression
     printWindow.onload = () => {
       setTimeout(() => {
         printWindow.print();
+        // Optionnel : fermer après impression
+        // printWindow.close();
       }, 500);
     };
   }
