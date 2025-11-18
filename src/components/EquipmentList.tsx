@@ -20,32 +20,35 @@ interface EquipmentListProps {
 
 const ITEMS_PER_PAGE = 25;
 
-export const EquipmentList = memo(({ equipment, onEdit, onDelete, onEquipmentClick }: EquipmentListProps) => {
+export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipmentClick }: EquipmentListProps) => {
   const [search, setSearch] = useState("");
-  const [filterCategory, setFilterCategory] = useState<string>("");
-  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedQR, setSelectedQR] = useState<{ url: string; name: string } | null>(null);
 
+  // Sécurisation des données pour éviter le crash "map of undefined"
+  const safeEquipment = Array.isArray(equipment) ? equipment : [];
+
   const categories = useMemo(() => {
-    const cats = new Set(equipment.map((e) => e.category));
+    const cats = new Set(safeEquipment.map((e) => e.category));
     return Array.from(cats).sort();
-  }, [equipment]);
+  }, [safeEquipment]);
 
   const filtered = useMemo(() => {
-    return equipment.filter((item) => {
+    return safeEquipment.filter((item) => {
       const matchesSearch =
-        item.poste.toLowerCase().includes(search.toLowerCase()) ||
-        item.marque?.toLowerCase().includes(search.toLowerCase()) ||
-        item.modele?.toLowerCase().includes(search.toLowerCase()) ||
-        item.numeroSerie?.toLowerCase().includes(search.toLowerCase());
+        (item.poste?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.marque?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.modele?.toLowerCase() || "").includes(search.toLowerCase()) ||
+        (item.numeroSerie?.toLowerCase() || "").includes(search.toLowerCase());
 
-      const matchesCategory = !filterCategory || item.category === filterCategory;
-      const matchesStatus = !filterStatus || item.etat === filterStatus;
+      const matchesCategory = filterCategory === "all" || !filterCategory || item.category === filterCategory;
+      const matchesStatus = filterStatus === "all" || !filterStatus || item.etat === filterStatus;
 
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [equipment, search, filterCategory, filterStatus]);
+  }, [safeEquipment, search, filterCategory, filterStatus]);
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
@@ -104,7 +107,7 @@ export const EquipmentList = memo(({ equipment, onEdit, onDelete, onEquipmentCli
               <SelectValue placeholder="Catégorie" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes</SelectItem>
+              <SelectItem value="all">Toutes</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
@@ -115,7 +118,7 @@ export const EquipmentList = memo(({ equipment, onEdit, onDelete, onEquipmentCli
               <SelectValue placeholder="État" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous</SelectItem>
+              <SelectItem value="all">Tous</SelectItem>
               <SelectItem value="OK">OK</SelectItem>
               <SelectItem value="Panne">Panne</SelectItem>
               <SelectItem value="HS">HS</SelectItem>
