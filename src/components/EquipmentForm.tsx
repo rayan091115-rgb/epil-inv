@@ -7,10 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
-import { useLocations } from "@/hooks/useLocations";
 
 interface EquipmentFormProps {
-  equipment?: Equipment;
+  equipment?: Equipment | null;
   onSubmit: (equipment: Partial<Equipment>) => void;
   onCancel: () => void;
 }
@@ -43,7 +42,7 @@ const categories: EquipmentCategory[] = [
 const statuses: EquipmentStatus[] = ["OK", "Panne", "HS"];
 
 export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormProps) => {
-  const { locations } = useLocations();
+  // Initialisation directe de l'état (plus besoin de useEffect grâce à la key dans Index.tsx)
   const [formData, setFormData] = useState<Partial<Equipment>>({
     poste: equipment?.poste || "",
     category: equipment?.category || "PC",
@@ -54,7 +53,6 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
     dateAchat: equipment?.dateAchat || "",
     finGarantie: equipment?.finGarantie || "",
     notes: equipment?.notes || "",
-    locationId: equipment?.locationId || "",
     processeur: equipment?.processeur || "",
     ram: equipment?.ram || "",
     capaciteDd: equipment?.capaciteDd || "",
@@ -67,8 +65,10 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.poste || !formData.category) {
+      return;
+    }
     
-    // Clean up empty strings to undefined for optional fields
     const cleanedData = {
       ...formData,
       marque: formData.marque?.trim() || undefined,
@@ -88,38 +88,39 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
   };
 
   const handleBarcodeScanned = (code: string) => {
-    setFormData({ ...formData, numeroSerie: code });
+    setFormData(prev => ({ ...prev, numeroSerie: code }));
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="border-0 shadow-none">
+      <CardHeader className="px-0 pt-0">
         <CardTitle>{equipment ? "Modifier le matériel" : "Ajouter un matériel"}</CardTitle>
         <CardDescription>
-          Tous les champs sont optionnels
+          Les champs marqués d'un * sont obligatoires
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="poste">Numéro attribué au {isPCCategory ? 'PC' : 'matériel'}</Label>
+              <Label htmlFor="poste">Numéro attribué au {isPCCategory ? 'PC' : 'matériel'} *</Label>
               <Input
                 id="poste"
                 value={formData.poste}
                 onChange={(e) => setFormData({ ...formData, poste: e.target.value })}
                 placeholder="Ex: PC135"
+                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category">Catégorie</Label>
+              <Label htmlFor="category">Catégorie *</Label>
               <Select
                 value={formData.category}
                 onValueChange={(value) => setFormData({ ...formData, category: value as EquipmentCategory })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -132,22 +133,24 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="marque">Marque</Label>
+              <Label htmlFor="marque">Marque {isPCCategory ? '*' : '(optionnel)'}</Label>
               <Input
                 id="marque"
                 value={formData.marque}
                 onChange={(e) => setFormData({ ...formData, marque: e.target.value })}
                 placeholder="Ex: HP, Dell, Lenovo..."
+                required={isPCCategory}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="modele">Modèle</Label>
+              <Label htmlFor="modele">Modèle {isPCCategory ? '*' : '(optionnel)'}</Label>
               <Input
                 id="modele"
                 value={formData.modele}
                 onChange={(e) => setFormData({ ...formData, modele: e.target.value })}
                 placeholder="Ex: ThinkCentre, Compaq 6200..."
+                required={isPCCategory}
               />
             </div>
 
@@ -167,43 +170,46 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
             {isPCCategory && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="processeur">Type du Processeur</Label>
+                  <Label htmlFor="processeur">Type du Processeur *</Label>
                   <Input
                     id="processeur"
                     value={formData.processeur}
                     onChange={(e) => setFormData({ ...formData, processeur: e.target.value })}
                     placeholder="Ex: i3-4130, Intel Pentium..."
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ram">RAM installée</Label>
+                  <Label htmlFor="ram">RAM installée *</Label>
                   <Input
                     id="ram"
                     value={formData.ram}
                     onChange={(e) => setFormData({ ...formData, ram: e.target.value })}
                     placeholder="Ex: 4G, 8G, 2x2GB DDR3..."
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="capaciteDd">Capacité du DD</Label>
+                  <Label htmlFor="capaciteDd">Capacité du DD *</Label>
                   <Input
                     id="capaciteDd"
                     value={formData.capaciteDd}
                     onChange={(e) => setFormData({ ...formData, capaciteDd: e.target.value })}
                     placeholder="Ex: 500GB, 250Go..."
+                    required
                   />
                 </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="alimentation">Alimentation</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="alimentation">Alimentation *</Label>
                   <Select
                     value={formData.alimentation ? "oui" : "non"}
                     onValueChange={(value) => setFormData({ ...formData, alimentation: value === "oui" })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="oui">Oui</SelectItem>
@@ -213,60 +219,42 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="os">OS installé</Label>
+                  <Label htmlFor="os">OS installé *</Label>
                   <Input
                     id="os"
                     value={formData.os}
                     onChange={(e) => setFormData({ ...formData, os: e.target.value })}
                     placeholder="Ex: Windows 10, Windows 7, Linux..."
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="adresseMac">Adresse MAC</Label>
+                  <Label htmlFor="adresseMac">Adresse MAC *</Label>
                   <Input
                     id="adresseMac"
                     value={formData.adresseMac}
                     onChange={(e) => setFormData({ ...formData, adresseMac: e.target.value })}
                     placeholder="Ex: 44-8A-0D-96-C6"
+                    required
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="etat">État</Label>
+              <Label htmlFor="etat">État *</Label>
               <Select
                 value={formData.etat}
                 onValueChange={(value) => setFormData({ ...formData, etat: value as EquipmentStatus })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
                   {statuses.map((status) => (
                     <SelectItem key={status} value={status}>
                       {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="location">Emplacement</Label>
-              <Select
-                value={formData.locationId}
-                onValueChange={(value) => setFormData({ ...formData, locationId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un emplacement..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Non assigné</SelectItem>
-                  {locations.map((location) => (
-                    <SelectItem key={location.id} value={location.id}>
-                      {location.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -305,7 +293,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex gap-2 justify-end pt-4">
             <Button type="button" variant="outline" onClick={onCancel}>
               Annuler
             </Button>
