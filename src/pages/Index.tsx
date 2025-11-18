@@ -165,7 +165,7 @@ const Index = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              EPIL Inventaire
+              Inventaire CIEL
             </h1>
             <p className="text-muted-foreground mt-1">
               {user.email} {isAdmin && <span className="text-primary font-semibold">• Admin</span>}
