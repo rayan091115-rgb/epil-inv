@@ -42,7 +42,6 @@ const categories: EquipmentCategory[] = [
 const statuses: EquipmentStatus[] = ["OK", "Panne", "HS"];
 
 export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormProps) => {
-  // Initialisation avec des valeurs par défaut sécurisées
   const defaultData: Partial<Equipment> = {
     poste: "",
     category: "PC",
@@ -63,7 +62,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
 
   const [formData, setFormData] = useState<Partial<Equipment>>(defaultData);
 
-  // CORRECTION : Mettre à jour le formulaire quand l'équipement change (mode édition)
+  // CORRECTION : Synchroniser le formulaire quand l'équipement change
   useEffect(() => {
     if (equipment) {
       setFormData({
@@ -84,7 +83,6 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
         adresseMac: equipment.adresseMac || "",
       });
     } else {
-      // Réinitialiser si mode "Ajouter"
       setFormData(defaultData);
     }
   }, [equipment]);
@@ -97,7 +95,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
       return;
     }
     
-    // Clean up empty strings to undefined for optional fields
+    // Nettoyage des données
     const cleanedData = {
       ...formData,
       marque: formData.marque?.trim() || undefined,
@@ -121,14 +119,14 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
   };
 
   return (
-    <Card className="border-0 shadow-none">
-      <CardHeader className="px-0 pt-0">
+    <Card>
+      <CardHeader>
         <CardTitle>{equipment ? "Modifier le matériel" : "Ajouter un matériel"}</CardTitle>
         <CardDescription>
           Les champs marqués d'un * sont obligatoires
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-0">
+      <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -149,7 +147,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                 onValueChange={(value) => setFormData({ ...formData, category: value as EquipmentCategory })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner une catégorie" />
+                  <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
@@ -238,7 +236,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                     onValueChange={(value) => setFormData({ ...formData, alimentation: value === "oui" })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="oui">Oui</SelectItem>
@@ -278,7 +276,7 @@ export const EquipmentForm = ({ equipment, onSubmit, onCancel }: EquipmentFormPr
                 onValueChange={(value) => setFormData({ ...formData, etat: value as EquipmentStatus })}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Sélectionner" />
                 </SelectTrigger>
                 <SelectContent>
                   {statuses.map((status) => (
