@@ -2,3 +2,6 @@ project_id = "eqnzuuefxcrydmqxselk"
 
 [functions.notify-equipment-added]
 verify_jwt = false
+
+[functions.generate-admin]
+verify_jwt = false

@@ -16,9 +16,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Search, UserPlus, RefreshCw } from "lucide-react";
+import { MoreVertical, Search, RefreshCw, Shield, UserCog, Ban, CheckCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSystemLogs } from "@/hooks/useSystemLogs";
 
@@ -31,13 +35,14 @@ interface UserProfile {
   last_login: string;
   login_count: number;
   created_at: string;
-  role?: string;
+  role?: "admin" | "moderator" | "user";
 }
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const { logAction } = useSystemLogs();
 
   const loadUsers = async () => {
@@ -63,7 +68,7 @@ export default function AdminUsers() {
 
           return {
             ...profile,
-            role: roleData?.role || "user",
+            role: (roleData?.role as "admin" | "moderator" | "user") || "user",
           };
         })
       );
@@ -80,6 +85,44 @@ export default function AdminUsers() {
   useEffect(() => {
     loadUsers();
   }, []);
+
+  const handleChangeRole = async (userId: string, newRole: "admin" | "moderator" | "user") => {
+    setUpdatingRole(userId);
+    try {
+      // First, check if user has a role entry
+      const { data: existingRole } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (existingRole) {
+        // Update existing role
+        const { error } = await supabase
+          .from("user_roles")
+          .update({ role: newRole, updated_at: new Date().toISOString() })
+          .eq("user_id", userId);
+
+        if (error) throw error;
+      } else {
+        // Insert new role
+        const { error } = await supabase
+          .from("user_roles")
+          .insert({ user_id: userId, role: newRole });
+
+        if (error) throw error;
+      }
+
+      await logAction("role_changed", { user_id: userId, new_role: newRole });
+      toast.success(`Rôle changé en ${newRole}`);
+      loadUsers();
+    } catch (error: any) {
+      toast.error("Erreur lors du changement de rôle");
+      console.error(error);
+    } finally {
+      setUpdatingRole(null);
+    }
+  };
 
   const handleSuspendUser = async (userId: string) => {
     try {
@@ -118,13 +161,16 @@ export default function AdminUsers() {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return;
+    if (!confirm("Êtes-vous sûr de vouloir supprimer définitivement cet utilisateur ? Cette action est irréversible.")) return;
 
     try {
-      // Use service role to delete user
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // Delete from profiles first (cascade should handle user_roles)
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
 
-      if (error) throw error;
+      if (profileError) throw profileError;
 
       await logAction("user_deleted", { user_id: userId });
       toast.success("Utilisateur supprimé");
@@ -147,17 +193,30 @@ export default function AdminUsers() {
       suspended: "destructive",
       deleted: "secondary",
     };
-    return <Badge variant={variants[status] || "secondary"}>{status}</Badge>;
+    const labels: Record<string, string> = {
+      active: "Actif",
+      suspended: "Suspendu",
+      deleted: "Supprimé",
+    };
+    return <Badge variant={variants[status] || "secondary"}>{labels[status] || status}</Badge>;
   };
 
   const getRoleBadge = (role: string) => {
     const colors: Record<string, string> = {
-      admin: "bg-red-500 text-white",
-      moderator: "bg-blue-500 text-white",
-      user: "bg-green-500 text-white",
+      admin: "bg-red-500 hover:bg-red-600 text-white",
+      moderator: "bg-blue-500 hover:bg-blue-600 text-white",
+      user: "bg-green-500 hover:bg-green-600 text-white",
+    };
+    const labels: Record<string, string> = {
+      admin: "Administrateur",
+      moderator: "Modérateur",
+      user: "Utilisateur",
     };
     return (
-      <Badge className={colors[role] || "bg-gray-500 text-white"}>{role}</Badge>
+      <Badge className={colors[role] || "bg-gray-500 text-white"}>
+        <Shield className="h-3 w-3 mr-1" />
+        {labels[role] || role}
+      </Badge>
     );
   };
 
@@ -165,7 +224,10 @@ export default function AdminUsers() {
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Gestion des utilisateurs</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <UserCog className="h-5 w-5" />
+            Gestion des utilisateurs et rôles
+          </CardTitle>
           <Button onClick={loadUsers} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Actualiser
@@ -185,6 +247,14 @@ export default function AdminUsers() {
           </div>
         </div>
 
+        {/* Role Legend */}
+        <div className="flex flex-wrap gap-2 mb-4 p-3 bg-muted/50 rounded-lg">
+          <span className="text-sm text-muted-foreground mr-2">Légende des rôles :</span>
+          <Badge className="bg-red-500 text-white"><Shield className="h-3 w-3 mr-1" />Admin - Accès total</Badge>
+          <Badge className="bg-blue-500 text-white"><Shield className="h-3 w-3 mr-1" />Modérateur - Création/Édition</Badge>
+          <Badge className="bg-green-500 text-white"><Shield className="h-3 w-3 mr-1" />Utilisateur - Lecture seule</Badge>
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -200,7 +270,7 @@ export default function AdminUsers() {
                   <TableHead>Statut</TableHead>
                   <TableHead>Connexions</TableHead>
                   <TableHead>Dernière connexion</TableHead>
-                  <TableHead className="w-[70px]"></TableHead>
+                  <TableHead className="w-[70px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -215,12 +285,24 @@ export default function AdminUsers() {
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.email}</TableCell>
                       <TableCell>{user.full_name || "-"}</TableCell>
-                      <TableCell>{getRoleBadge(user.role || "user")}</TableCell>
+                      <TableCell>
+                        {updatingRole === user.user_id ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                        ) : (
+                          getRoleBadge(user.role || "user")
+                        )}
+                      </TableCell>
                       <TableCell>{getStatusBadge(user.status)}</TableCell>
                       <TableCell>{user.login_count || 0}</TableCell>
                       <TableCell>
                         {user.last_login
-                          ? new Date(user.last_login).toLocaleDateString("fr-FR")
+                          ? new Date(user.last_login).toLocaleDateString("fr-FR", {
+                              day: "2-digit",
+                              month: "2-digit", 
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
                           : "Jamais"}
                       </TableCell>
                       <TableCell>
@@ -230,25 +312,59 @@ export default function AdminUsers() {
                               <MoreVertical className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                <Shield className="h-4 w-4 mr-2" />
+                                Changer le rôle
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuItem
+                                  onClick={() => handleChangeRole(user.user_id, "admin")}
+                                  disabled={user.role === "admin"}
+                                >
+                                  <Badge className="bg-red-500 text-white mr-2">Admin</Badge>
+                                  Administrateur
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleChangeRole(user.user_id, "moderator")}
+                                  disabled={user.role === "moderator"}
+                                >
+                                  <Badge className="bg-blue-500 text-white mr-2">Mod</Badge>
+                                  Modérateur
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleChangeRole(user.user_id, "user")}
+                                  disabled={user.role === "user"}
+                                >
+                                  <Badge className="bg-green-500 text-white mr-2">User</Badge>
+                                  Utilisateur
+                                </DropdownMenuItem>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            
+                            <DropdownMenuSeparator />
+                            
                             {user.status === "active" ? (
-                              <DropdownMenuItem
-                                onClick={() => handleSuspendUser(user.user_id)}
-                              >
+                              <DropdownMenuItem onClick={() => handleSuspendUser(user.user_id)}>
+                                <Ban className="h-4 w-4 mr-2" />
                                 Suspendre
                               </DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem
-                                onClick={() => handleActivateUser(user.user_id)}
-                              >
+                              <DropdownMenuItem onClick={() => handleActivateUser(user.user_id)}>
+                                <CheckCircle className="h-4 w-4 mr-2" />
                                 Activer
                               </DropdownMenuItem>
                             )}
+                            
+                            <DropdownMenuSeparator />
+                            
                             <DropdownMenuItem
                               onClick={() => handleDeleteUser(user.user_id)}
-                              className="text-destructive"
+                              className="text-destructive focus:text-destructive"
                             >
-                              Supprimer
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Supprimer définitivement
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -260,6 +376,10 @@ export default function AdminUsers() {
             </Table>
           </div>
         )}
+
+        <div className="mt-4 text-sm text-muted-foreground">
+          Total : {filteredUsers.length} utilisateur(s)
+        </div>
       </CardContent>
     </Card>
   );
