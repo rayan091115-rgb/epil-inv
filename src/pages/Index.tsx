@@ -13,11 +13,11 @@ import { QRScanner } from "@/components/QRScanner";
 import { Dashboard } from "@/components/Dashboard";
 import { AdminPanel } from "@/components/AdminPanel";
 import { EquipmentDetailModal } from "@/components/EquipmentDetailModal";
+import { ImportCSVButton } from "@/components/ImportCSVButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Plus, 
-  Download, 
-  Upload,
+  Download,
   LogOut,
   ScanLine,
   FileText,
@@ -66,52 +66,6 @@ const Index = () => {
       title: "Export réussi",
       description: "L'inventaire a été exporté en CSV.",
     });
-  };
-
-  const handleImportCSV = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const content = e.target?.result as string;
-      const parsed = csvUtils.parseCSV(content);
-
-      let success = 0;
-      let failed = 0;
-
-      for (const [index, item] of parsed.entries()) {
-        try {
-          if (!item.poste || item.poste.trim() === "") {
-            console.warn(`Ligne ${index + 2} ignorée : poste vide`);
-            failed++;
-            continue;
-          }
-
-          await addEquipmentAsync(item);
-          success++;
-        } catch (err) {
-          console.error(`Erreur ligne ${index + 2} :`, err);
-          failed++;
-        }
-      }
-
-      if (failed === 0) {
-        toast({
-          title: "Import réussi",
-          description: `${success} équipement(s) importé(s).`,
-        });
-      } else {
-        toast({
-          title: "Import partiel",
-          description: `${success} réussi(s), ${failed} en erreur.`,
-          variant: "destructive",
-        });
-      }
-    };
-
-    reader.readAsText(file);
-    event.target.value = "";
   };
 
   const handleGenerateQRSheet = async () => {
@@ -224,20 +178,7 @@ const Index = () => {
                 <Download className="h-4 w-4" />
                 Exporter CSV
               </Button>
-              <label>
-                <Button variant="outline" className="gap-2" asChild>
-                  <span>
-                    <Upload className="h-4 w-4" />
-                    Importer CSV
-                  </span>
-                </Button>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleImportCSV}
-                  className="hidden"
-                />
-              </label>
+              <ImportCSVButton />
               <Button variant="outline" onClick={handleGenerateQRSheet} className="gap-2">
                 <FileText className="h-4 w-4" />
                 Générer étiquettes QR

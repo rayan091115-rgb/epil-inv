@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, Activity, Shield, Settings, BarChart3, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Activity, Shield, Settings, BarChart3, FileText, ArrowLeft } from "lucide-react";
 import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
-import AdminUsers from "./AdminUsers";
+import AdminUsersOptimized from "./AdminUsersOptimized";
 import AdminLogs from "./AdminLogs";
 import AdminRoles from "./AdminRoles";
 import AdminStats from "./AdminStats";
 import AdminSettings from "./AdminSettings";
+import AdminActivity from "./AdminActivity";
 
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
@@ -43,9 +45,16 @@ export default function AdminDashboard() {
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Tableau de bord administrateur</h1>
-          <p className="text-muted-foreground">Gestion complète du système</p>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild>
+            <Link to="/">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Tableau de bord administrateur</h1>
+            <p className="text-muted-foreground">Gestion complète du système</p>
+          </div>
         </div>
       </div>
 
@@ -82,7 +91,7 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="users">
-          <AdminUsers />
+          <AdminUsersOptimized />
         </TabsContent>
 
         <TabsContent value="logs">
@@ -94,14 +103,7 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="activity">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activité en temps réel</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Timeline d'activité - À venir</p>
-            </CardContent>
-          </Card>
+          <AdminActivity />
         </TabsContent>
 
         <TabsContent value="settings">
