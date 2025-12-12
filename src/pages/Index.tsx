@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Equipment } from "@/types/equipment";
 import { csvUtils } from "@/lib/csv-utils";
@@ -24,13 +24,21 @@ import {
   LayoutDashboard,
   Shield
 } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { equipment, isLoading, addEquipmentAsync, updateEquipment, deleteEquipment } = useEquipment();
+  const { user, loading: authLoading, signOut, isSessionValid } = useAuth();
+  const { 
+    equipment, 
+    isLoading, 
+    addEquipmentAsync, 
+    updateEquipment, 
+    deleteEquipment,
+    isAdding,
+    isUpdating 
+  } = useEquipment();
   const { isAdmin, loading: roleLoading } = useUserRole(user?.id);
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
@@ -38,69 +46,68 @@ const Index = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  // Auth redirect - defensive check
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
 
-  const handleAddEquipment = async (data: Partial<Equipment>) => {
-    await addEquipmentAsync(data);
-    setShowForm(false);
-  };
+  // Stable callbacks to prevent race conditions
+  const handleAddEquipment = useCallback(async (data: Partial<Equipment>) => {
+    try {
+      await addEquipmentAsync(data);
+      setShowForm(false);
+      setEditingEquipment(null);
+    } catch (error) {
+      console.error("[Index] Add equipment error:", error);
+      // Error is already handled in useEquipment hook
+    }
+  }, [addEquipmentAsync]);
 
-  const handleUpdateEquipment = (data: Partial<Equipment>) => {
+  const handleUpdateEquipment = useCallback((data: Partial<Equipment>) => {
     if (!editingEquipment) return;
     updateEquipment({ id: editingEquipment.id, data });
     setEditingEquipment(null);
     setShowForm(false);
-  };
+  }, [editingEquipment, updateEquipment]);
 
-  const handleDeleteEquipment = (id: string) => {
+  const handleDeleteEquipment = useCallback((id: string) => {
     deleteEquipment(id);
-  };
+  }, [deleteEquipment]);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = useCallback(() => {
     csvUtils.downloadCSV(equipment);
-    toast({
-      title: "Export réussi",
-      description: "L'inventaire a été exporté en CSV.",
-    });
-  };
+    toast.success("Inventaire exporté en CSV");
+  }, [equipment]);
 
-  const handleGenerateQRSheet = async () => {
+  const handleGenerateQRSheet = useCallback(async () => {
     if (equipment.length === 0) {
-      toast({
-        title: "Aucun équipement",
-        description: "Veuillez ajouter des équipements avant de générer les étiquettes.",
-        variant: "destructive",
-      });
+      toast.error("Veuillez ajouter des équipements avant de générer les étiquettes");
       return;
     }
 
     try {
       await generateA4QRSheet(equipment);
-      toast({
-        title: "PDF généré",
-        description: "La feuille d'étiquettes QR a été générée avec succès.",
-      });
+      toast.success("Feuille d'étiquettes QR générée");
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de générer le PDF.",
-        variant: "destructive",
-      });
+      console.error("[Index] QR sheet generation error:", error);
+      toast.error("Impossible de générer le PDF");
     }
-  };
+  }, [equipment]);
 
-  const handleEquipmentClick = (equipment: Equipment) => {
+  const handleEquipmentClick = useCallback((equipment: Equipment) => {
     setSelectedEquipment(equipment);
-  };
+  }, []);
 
-  const handleSignOut = async () => {
+  const handleSignOut = useCallback(async () => {
     await signOut();
-    navigate("/auth");
-  };
+  }, [signOut]);
+
+  const handleFormCancel = useCallback(() => {
+    setShowForm(false);
+    setEditingEquipment(null);
+  }, []);
 
   if (authLoading || roleLoading) {
     return (

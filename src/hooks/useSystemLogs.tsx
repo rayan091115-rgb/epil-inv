@@ -1,45 +1,71 @@
+import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+/**
+ * Hook pour la journalisation système
+ * - Logging asynchrone non-bloquant
+ * - Ne doit JAMAIS interrompre le flux d'authentification
+ */
 export const useSystemLogs = () => {
-  const logAction = async (
+  /**
+   * Log an action to system_logs table
+   * This is fire-and-forget - errors are caught and logged but never thrown
+   */
+  const logAction = useCallback(async (
     action: string,
     details?: Record<string, any>
   ) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get current session without triggering refresh
+      const { data: { session } } = await supabase.auth.getSession();
       
-      const { error } = await (supabase as any).from("system_logs").insert({
-        user_id: user?.id,
+      await supabase.from("system_logs").insert({
+        user_id: session?.user?.id || null,
         action,
-        details,
+        details: {
+          ...details,
+          timestamp: new Date().toISOString(),
+        },
         ip_address: null,
-        user_agent: navigator.userAgent,
+        user_agent: typeof navigator !== "undefined" ? navigator.userAgent : null,
       });
-      
-      if (error) console.error("Error logging action:", error);
     } catch (error) {
-      console.error("Error logging action:", error);
+      // Silent fail - logging should never break the app
+      console.error("[SystemLogs] Error logging action:", error);
     }
-  };
+  }, []);
 
-  const getSystemLogs = async (limit = 100) => {
+  /**
+   * Fetch system logs with pagination
+   */
+  const getSystemLogs = useCallback(async (limit = 100, offset = 0) => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("system_logs")
         .select(`
-          *,
+          id,
+          user_id,
+          action,
+          details,
+          created_at,
+          user_agent,
+          ip_address,
           profiles:user_id (email, full_name)
         `)
         .order("created_at", { ascending: false })
-        .limit(limit);
+        .range(offset, offset + limit - 1);
 
-      if (error) throw error;
+      if (error) {
+        console.error("[SystemLogs] Fetch error:", error);
+        throw error;
+      }
+      
       return data || [];
     } catch (error) {
-      console.error("Error fetching system logs:", error);
+      console.error("[SystemLogs] Error fetching logs:", error);
       return [];
     }
-  };
+  }, []);
 
   return { logAction, getSystemLogs };
 };

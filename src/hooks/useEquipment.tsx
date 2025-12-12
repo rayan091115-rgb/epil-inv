@@ -1,14 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Equipment } from "@/types/equipment";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { qrGenerator } from "@/lib/qr-generator";
 
+/**
+ * Hook de gestion des équipements avec TanStack Query
+ * - Optimistic updates pour UX réactive
+ * - Gestion d'erreur robuste sans déconnexion
+ * - Retry automatique sur erreur réseau
+ */
 export const useEquipment = () => {
   const queryClient = useQueryClient();
 
-  // Fetch all equipment
-  const { data: equipment = [], isLoading } = useQuery({
+  // Helper to normalize text fields
+  const normalizeText = (v?: string) =>
+    v && v.trim() !== "" ? v.trim() : null;
+
+  const normalizeDate = (v?: string) =>
+    v && v.trim() !== "" ? v.trim() : null;
+
+  // Fetch all equipment with retry and stale time
+  const { data: equipment = [], isLoading, error } = useQuery({
     queryKey: ["equipment"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -16,7 +29,10 @@ export const useEquipment = () => {
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Equipment] Fetch error:", error);
+        throw error;
+      }
 
       return data.map((item: any) => ({
         id: item.id,
@@ -38,139 +54,212 @@ export const useEquipment = () => {
         adresseMac: item.adresse_mac,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
+        locationId: item.location_id,
       })) as Equipment[];
     },
+    staleTime: 30000, // 30 seconds cache
+    retry: 2,
+    retryDelay: 1000,
   });
 
-  // Add equipment
+  // Add equipment with optimistic update
   const addEquipment = useMutation({
     mutationFn: async (data: Partial<Equipment>) => {
-      // Petite fonction utilitaire pour nettoyer les champs texte
-      const normalizeText = (v?: string) =>
-        v && v.trim() !== "" ? v.trim() : null;
-
-      // Les dates doivent être soit une string de date valide, soit null
-      const normalizeDate = (v?: string) =>
-        v && v.trim() !== "" ? v.trim() : null;
-
-      // Generate QR code first
       const tempId = crypto.randomUUID();
+      
+      // Generate QR code
       const qrCode = await qrGenerator.generate(tempId);
+
+      const insertData = {
+        id: tempId,
+        poste: data.poste,
+        category: data.category || "PC",
+        marque: normalizeText(data.marque),
+        modele: normalizeText(data.modele),
+        numero_serie: normalizeText(data.numeroSerie),
+        etat: (data.etat || "OK") as Equipment["etat"],
+        date_achat: normalizeDate(data.dateAchat),
+        fin_garantie: normalizeDate(data.finGarantie),
+        notes: normalizeText(data.notes),
+        qr_code: qrCode,
+        processeur: normalizeText(data.processeur),
+        ram: normalizeText(data.ram),
+        capacite_dd: normalizeText(data.capaciteDd),
+        alimentation: data.alimentation ?? true,
+        os: normalizeText(data.os),
+        adresse_mac: normalizeText(data.adresseMac),
+      };
 
       const { data: newEquipment, error } = await supabase
         .from("equipment")
-        .insert({
-          id: tempId,
-          poste: data.poste,                          // obligatoire
-          category: data.category,                    // "PC", "Écran", etc.
-          marque: normalizeText(data.marque),
-          modele: normalizeText(data.modele),
-          numero_serie: normalizeText(data.numeroSerie),
-          etat: (data.etat || "OK") as Equipment["etat"],
-          date_achat: normalizeDate(data.dateAchat),
-          fin_garantie: normalizeDate(data.finGarantie),
-          notes: normalizeText(data.notes),
-          qr_code: qrCode,
-          processeur: normalizeText(data.processeur),
-          ram: normalizeText(data.ram),
-          capacite_dd: normalizeText(data.capaciteDd),
-          alimentation: data.alimentation ?? true,
-          os: normalizeText(data.os),
-          adresse_mac: normalizeText(data.adresseMac),
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Equipment] Add error:", error);
+        throw error;
+      }
+      
       return newEquipment;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast({
-        title: "Matériel ajouté",
-        description: "Le matériel a été ajouté avec succès.",
-      });
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["equipment"] });
+      
+      // Snapshot previous value
+      const previousEquipment = queryClient.getQueryData<Equipment[]>(["equipment"]);
+      
+      // Optimistically add the new equipment
+      const tempEquipment: Equipment = {
+        id: crypto.randomUUID(),
+        poste: newData.poste || "",
+        category: (newData.category || "PC") as Equipment["category"],
+        marque: newData.marque || null,
+        modele: newData.modele || null,
+        numeroSerie: newData.numeroSerie || null,
+        etat: (newData.etat || "OK") as Equipment["etat"],
+        dateAchat: newData.dateAchat || null,
+        finGarantie: newData.finGarantie || null,
+        notes: newData.notes || null,
+        qrCode: null,
+        processeur: newData.processeur || null,
+        ram: newData.ram || null,
+        capaciteDd: newData.capaciteDd || null,
+        alimentation: newData.alimentation ?? true,
+        os: newData.os || null,
+        adresseMac: newData.adresseMac || null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      
+      queryClient.setQueryData<Equipment[]>(["equipment"], (old) => 
+        [tempEquipment, ...(old || [])]
+      );
+      
+      return { previousEquipment };
     },
-    onError: (error) => {
-      toast({
-        title: "Erreur",
-        description: "Impossible d'ajouter le matériel.",
-        variant: "destructive",
-      });
-      console.error("Add equipment error:", error);
+    onError: (error, _, context) => {
+      // Rollback on error
+      if (context?.previousEquipment) {
+        queryClient.setQueryData(["equipment"], context.previousEquipment);
+      }
+      toast.error("Erreur lors de l'ajout du matériel");
+      console.error("[Equipment] Add error:", error);
+    },
+    onSuccess: () => {
+      toast.success("Matériel ajouté avec succès");
+    },
+    onSettled: () => {
+      // Always refetch after mutation to sync with server
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
     },
   });
 
   // Update equipment
   const updateEquipment = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Equipment> }) => {
+      const updateData = {
+        poste: data.poste,
+        category: data.category,
+        marque: normalizeText(data.marque),
+        modele: normalizeText(data.modele),
+        numero_serie: normalizeText(data.numeroSerie),
+        etat: data.etat,
+        date_achat: normalizeDate(data.dateAchat),
+        fin_garantie: normalizeDate(data.finGarantie),
+        notes: normalizeText(data.notes),
+        processeur: normalizeText(data.processeur),
+        ram: normalizeText(data.ram),
+        capacite_dd: normalizeText(data.capaciteDd),
+        alimentation: data.alimentation,
+        os: normalizeText(data.os),
+        adresse_mac: normalizeText(data.adresseMac),
+      };
+
       const { error } = await supabase
         .from("equipment")
-        .update({
-          poste: data.poste,
-          category: data.category,
-          marque: data.marque,
-          modele: data.modele,
-          numero_serie: data.numeroSerie,
-          etat: data.etat,
-          date_achat: data.dateAchat,
-          fin_garantie: data.finGarantie,
-          notes: data.notes,
-          processeur: data.processeur,
-          ram: data.ram,
-          capacite_dd: data.capaciteDd,
-          alimentation: data.alimentation,
-          os: data.os,
-          adresse_mac: data.adresseMac,
-        })
+        .update(updateData)
         .eq("id", id);
 
-      if (error) throw error;
+      if (error) {
+        console.error("[Equipment] Update error:", error);
+        throw error;
+      }
+    },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ["equipment"] });
+      const previousEquipment = queryClient.getQueryData<Equipment[]>(["equipment"]);
+      
+      queryClient.setQueryData<Equipment[]>(["equipment"], (old) =>
+        old?.map((eq) => (eq.id === id ? { ...eq, ...data } : eq))
+      );
+      
+      return { previousEquipment };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousEquipment) {
+        queryClient.setQueryData(["equipment"], context.previousEquipment);
+      }
+      toast.error("Erreur lors de la mise à jour");
+      console.error("[Equipment] Update error:", error);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast({
-        title: "Matériel mis à jour",
-        description: "Le matériel a été mis à jour avec succès.",
-      });
+      toast.success("Matériel mis à jour");
     },
-    onError: () => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de mettre à jour le matériel.",
-        variant: "destructive",
-      });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
     },
   });
 
   // Delete equipment
   const deleteEquipment = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("equipment").delete().eq("id", id);
-      if (error) throw error;
+      const { error } = await supabase
+        .from("equipment")
+        .delete()
+        .eq("id", id);
+      
+      if (error) {
+        console.error("[Equipment] Delete error:", error);
+        throw error;
+      }
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: ["equipment"] });
+      const previousEquipment = queryClient.getQueryData<Equipment[]>(["equipment"]);
+      
+      queryClient.setQueryData<Equipment[]>(["equipment"], (old) =>
+        old?.filter((eq) => eq.id !== id)
+      );
+      
+      return { previousEquipment };
+    },
+    onError: (error, _, context) => {
+      if (context?.previousEquipment) {
+        queryClient.setQueryData(["equipment"], context.previousEquipment);
+      }
+      toast.error("Erreur lors de la suppression");
+      console.error("[Equipment] Delete error:", error);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["equipment"] });
-      toast({
-        title: "Matériel supprimé",
-        description: "Le matériel a été supprimé avec succès.",
-      });
+      toast.success("Matériel supprimé");
     },
-    onError: () => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le matériel.",
-        variant: "destructive",
-      });
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["equipment"] });
     },
   });
 
   return {
     equipment,
     isLoading,
+    error,
     addEquipment: addEquipment.mutate,
-    addEquipmentAsync: addEquipment.mutateAsync, // ✅ on l’expose pour l’import CSV
+    addEquipmentAsync: addEquipment.mutateAsync,
     updateEquipment: updateEquipment.mutate,
     deleteEquipment: deleteEquipment.mutate,
+    isAdding: addEquipment.isPending,
+    isUpdating: updateEquipment.isPending,
+    isDeleting: deleteEquipment.isPending,
   };
 };
