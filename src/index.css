@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Merriweather&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,29 +13,29 @@
 @layer base {
   :root {
     /* Deep Space - Dark Professional Theme */
-    --background: 225 25% 8%;
-    --foreground: 210 20% 95%;
+    --background: 240 4% 95%;
+    --foreground: 240 5% 10%;
 
-    --card: 225 25% 12%;
-    --card-foreground: 210 20% 95%;
+    --card: 0 0% 98%;
+    --card-foreground: 240 5% 10%;
 
-    --popover: 225 25% 10%;
-    --popover-foreground: 210 20% 95%;
+    --popover: 240 5% 90%;
+    --popover-foreground: 240 5% 10%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 225 25% 5%;
+    --primary: 229 84% 4.902%;
+    --primary-foreground: 327 73% 97%;
 
-    --secondary: 225 20% 18%;
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 240 5% 33%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 225 20% 16%;
-    --muted-foreground: 215 15% 55%;
+    --muted: 240 4% 83%;
+    --muted-foreground: 240 5% 10%;
 
-    --accent: 217 91% 60%;
-    --accent-foreground: 225 25% 5%;
+    --accent: 355 100% 97%;
+    --accent-foreground: 215 25% 26.6667%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 85% 97%;
 
     --success: 142 76% 42%;
     --success-foreground: 210 20% 98%;
@@ -40,11 +43,11 @@
     --warning: 38 92% 50%;
     --warning-foreground: 225 25% 5%;
 
-    --border: 225 15% 20%;
-    --input: 225 20% 15%;
-    --ring: 217 91% 60%;
+    --border: 240 4% 83%;
+    --input: 240 4% 83%;
+    --ring: 196 63.6364% 23.7255%;
 
-    --radius: 1rem;
+    --radius: 1.5rem;
 
     /* Glass Effect Variables */
     --glass-bg: 225 25% 12% / 0.6;
@@ -54,21 +57,21 @@
     --glass-glow: 217 91% 60% / 0.15;
 
     /* Chart Colors - Vibrant but Professional */
-    --chart-1: 217 91% 60%;
-    --chart-2: 142 76% 42%;
-    --chart-3: 0 72% 51%;
-    --chart-4: 38 92% 50%;
-    --chart-5: 280 65% 60%;
+    --chart-1: 199 95.4887% 73.9216%;
+    --chart-2: 192 91.3978% 36.4706%;
+    --chart-3: 199 95.4887% 73.9216%;
+    --chart-4: 186 93.5484% 81.7647%;
+    --chart-5: 240 3% 46%;
 
     /* Sidebar */
     --sidebar-background: 225 25% 6%;
-    --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 225 25% 5%;
-    --sidebar-accent: 225 20% 14%;
-    --sidebar-accent-foreground: 210 20% 90%;
-    --sidebar-border: 225 15% 18%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-foreground: 240 5% 10%;
+    --sidebar-primary: 333 71% 50%;
+    --sidebar-primary-foreground: 327 73% 97%;
+    --sidebar-accent: 240 5% 33%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 83%;
+    --sidebar-ring: 333 71% 50%;
 
     /* Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(240 80% 55%));
@@ -77,6 +80,20 @@
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(350 80% 45%));
     --gradient-glass: linear-gradient(135deg, hsl(225 25% 15% / 0.8), hsl(225 25% 10% / 0.6));
     --gradient-shine: linear-gradient(135deg, hsl(210 20% 95% / 0.1), transparent);
+    --sidebar: 0 0% 98%;
+    --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
+    --font-serif: 'Merriweather', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+    --tracking-normal: 0em;
+    --spacing: 0.25rem;
   }
 
   .light {
@@ -133,6 +150,48 @@
 
     --gradient-glass: linear-gradient(135deg, hsl(0 0% 100% / 0.9), hsl(0 0% 100% / 0.7));
     --gradient-shine: linear-gradient(135deg, hsl(0 0% 100% / 0.5), transparent);
+  }
+  .dark {
+    --background: 240 5% 10%;
+    --foreground: 0 0% 98%;
+    --card: 240 3% 15%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 5% 26%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 328 85% 70%;
+    --primary-foreground: 336 83% 17%;
+    --secondary: 240 3% 46%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3% 46%;
+    --muted-foreground: 0 0% 98%;
+    --accent: 343 87% 15%;
+    --accent-foreground: 351 94% 71%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 85% 97%;
+    --border: 240 5% 33%;
+    --input: 240 5% 33%;
+    --ring: 328 85% 70%;
+    --chart-1: 327 87% 81%;
+    --chart-2: 352 95% 81%;
+    --chart-3: 328 85% 70%;
+    --chart-4: 351 94% 71%;
+    --chart-5: 240 5% 33%;
+    --sidebar: 240 3% 15%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 328 85% 70%;
+    --sidebar-primary-foreground: 336 83% 17%;
+    --sidebar-accent: 351 94% 71%;
+    --sidebar-accent-foreground: 343 87% 15%;
+    --sidebar-border: 240 5% 33%;
+    --sidebar-ring: 328 85% 70%;
+    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
+    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   }
 }
 
