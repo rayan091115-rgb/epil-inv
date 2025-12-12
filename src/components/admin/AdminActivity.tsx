@@ -33,22 +33,31 @@ export default function AdminActivity() {
   const { data: logs = [], isLoading, error } = useQuery({
     queryKey: ["admin-activity-logs"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("system_logs")
-        .select(`
-          id,
-          user_id,
-          action,
-          details,
-          created_at,
-          user_agent,
-          profiles:user_id (email, full_name)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      // Fetch logs and profiles separately (no FK relationship exists)
+      const [logsRes, profilesRes] = await Promise.all([
+        supabase
+          .from("system_logs")
+          .select("id, user_id, action, details, created_at, user_agent")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("profiles")
+          .select("user_id, email, full_name")
+      ]);
 
-      if (error) throw error;
-      return data as unknown as ActivityLog[];
+      if (logsRes.error) throw logsRes.error;
+
+      // Create a lookup map for profiles
+      const profilesMap = new Map<string, { email: string | null; full_name: string | null }>();
+      (profilesRes.data || []).forEach((p) => {
+        profilesMap.set(p.user_id, { email: p.email, full_name: p.full_name });
+      });
+
+      // Merge logs with profile data
+      return (logsRes.data || []).map((log) => ({
+        ...log,
+        profiles: log.user_id ? profilesMap.get(log.user_id) || null : null,
+      })) as ActivityLog[];
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
