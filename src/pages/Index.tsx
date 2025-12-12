@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Equipment } from "@/types/equipment";
 import { csvUtils } from "@/lib/csv-utils";
@@ -15,66 +15,153 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { EquipmentDetailModal } from "@/components/EquipmentDetailModal";
 import { ImportCSVButton } from "@/components/ImportCSVButton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Plus, 
+import {
+  Plus,
   Download,
   LogOut,
   ScanLine,
   FileText,
   LayoutDashboard,
-  Shield
+  Shield,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+// Memoized Header Component
+const Header = memo(
+  ({
+    email,
+    isAdmin,
+    onNavigateAdmin,
+    onSignOut,
+  }: {
+    email: string;
+    isAdmin: boolean;
+    onNavigateAdmin: () => void;
+    onSignOut: () => void;
+  }) => (
+    <header className="glass-card px-6 py-4 mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-xl bg-primary/10">
+            <Sparkles className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gradient">Inventaire CIEL</h1>
+            <p className="text-sm text-muted-foreground">
+              {email}{" "}
+              {isAdmin && (
+                <span className="text-primary font-semibold">• Admin</span>
+              )}
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {isAdmin && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={onNavigateAdmin}
+              className="glass-button"
+            >
+              <Shield className="h-4 w-4 mr-2" />
+              Dashboard Admin
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onSignOut}
+            className="border-border/50 hover:bg-secondary/50"
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Déconnexion
+          </Button>
+        </div>
+      </div>
+    </header>
+  )
+);
+
+Header.displayName = "Header";
+
+// Loading Spinner
+const LoadingSpinner = () => (
+  <div className="min-h-screen flex items-center justify-center animated-gradient">
+    <div className="glass-card p-8 flex flex-col items-center gap-4">
+      <div className="relative">
+        <div className="w-16 h-16 rounded-full border-4 border-primary/20" />
+        <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+      <p className="text-muted-foreground">Chargement...</p>
+    </div>
+  </div>
+);
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signOut, isSessionValid } = useAuth();
-  const { 
-    equipment, 
-    isLoading, 
-    addEquipmentAsync, 
-    updateEquipment, 
+  const { user, loading: authLoading, signOut } = useAuth();
+  const {
+    equipment,
+    isLoading,
+    addEquipmentAsync,
+    updateEquipment,
     deleteEquipment,
-    isAdding,
-    isUpdating 
   } = useEquipment();
   const { isAdmin, loading: roleLoading } = useUserRole(user?.id);
-  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
+  const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(
+    null
+  );
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(
+    null
+  );
   const [showForm, setShowForm] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Auth redirect - defensive check
+  // Auth redirect
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/auth");
     }
   }, [user, authLoading, navigate]);
 
-  // Stable callbacks to prevent race conditions
-  const handleAddEquipment = useCallback(async (data: Partial<Equipment>) => {
-    try {
-      await addEquipmentAsync(data);
-      setShowForm(false);
+  // Stable callbacks
+  const handleAddEquipment = useCallback(
+    async (data: Partial<Equipment>) => {
+      try {
+        await addEquipmentAsync(data);
+        setShowForm(false);
+        setEditingEquipment(null);
+      } catch (error) {
+        console.error("[Index] Add equipment error:", error);
+      }
+    },
+    [addEquipmentAsync]
+  );
+
+  const handleUpdateEquipment = useCallback(
+    (data: Partial<Equipment>) => {
+      if (!editingEquipment) return;
+      updateEquipment({ id: editingEquipment.id, data });
       setEditingEquipment(null);
-    } catch (error) {
-      console.error("[Index] Add equipment error:", error);
-      // Error is already handled in useEquipment hook
-    }
-  }, [addEquipmentAsync]);
+      setShowForm(false);
+    },
+    [editingEquipment, updateEquipment]
+  );
 
-  const handleUpdateEquipment = useCallback((data: Partial<Equipment>) => {
-    if (!editingEquipment) return;
-    updateEquipment({ id: editingEquipment.id, data });
-    setEditingEquipment(null);
-    setShowForm(false);
-  }, [editingEquipment, updateEquipment]);
-
-  const handleDeleteEquipment = useCallback((id: string) => {
-    deleteEquipment(id);
-  }, [deleteEquipment]);
+  const handleDeleteEquipment = useCallback(
+    (id: string) => {
+      deleteEquipment(id);
+    },
+    [deleteEquipment]
+  );
 
   const handleExportCSV = useCallback(() => {
     csvUtils.downloadCSV(equipment);
@@ -86,7 +173,6 @@ const Index = () => {
       toast.error("Veuillez ajouter des équipements avant de générer les étiquettes");
       return;
     }
-
     try {
       await generateA4QRSheet(equipment);
       toast.success("Feuille d'étiquettes QR générée");
@@ -104,97 +190,103 @@ const Index = () => {
     await signOut();
   }, [signOut]);
 
-  const handleFormCancel = useCallback(() => {
-    setShowForm(false);
-    setEditingEquipment(null);
-  }, []);
+  const handleNavigateAdmin = useCallback(() => {
+    navigate("/admin");
+  }, [navigate]);
 
   if (authLoading || roleLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen animated-gradient">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Inventaire CIEL
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              {user.email} {isAdmin && <span className="text-primary font-semibold">• Admin</span>}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {isAdmin && (
-              <Button variant="default" size="sm" onClick={() => navigate("/admin")}>
-                <Shield className="h-4 w-4 mr-2" />
-                Dashboard Admin
-              </Button>
-            )}
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Déconnexion
-            </Button>
-          </div>
-        </div>
+        {/* Glass Header */}
+        <Header
+          email={user.email || ""}
+          isAdmin={isAdmin}
+          onNavigateAdmin={handleNavigateAdmin}
+          onSignOut={handleSignOut}
+        />
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2">
-            <TabsTrigger value="dashboard" className="gap-2">
+          <TabsList className="glass-card p-1.5 h-auto grid w-full grid-cols-2 lg:grid-cols-4 gap-1">
+            <TabsTrigger
+              value="dashboard"
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl py-3"
+            >
               <LayoutDashboard className="h-4 w-4" />
-              Tableau de bord
+              <span className="hidden sm:inline">Tableau de bord</span>
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="gap-2">
+            <TabsTrigger
+              value="inventory"
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl py-3"
+            >
               <FileText className="h-4 w-4" />
-              Inventaire
+              <span className="hidden sm:inline">Inventaire</span>
             </TabsTrigger>
-            <TabsTrigger value="scanner" className="gap-2">
+            <TabsTrigger
+              value="scanner"
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl py-3"
+            >
               <ScanLine className="h-4 w-4" />
-              Scanner
+              <span className="hidden sm:inline">Scanner</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger value="admin" className="gap-2">
+              <TabsTrigger
+                value="admin"
+                className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl py-3"
+              >
                 <Shield className="h-4 w-4" />
-                Admin
+                <span className="hidden sm:inline">Admin</span>
               </TabsTrigger>
             )}
           </TabsList>
 
           {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
+          <TabsContent value="dashboard" className="space-y-6 animate-fade-in">
             <Dashboard equipment={equipment} />
           </TabsContent>
 
           {/* Inventory Tab */}
-          <TabsContent value="inventory" className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-              <Button onClick={() => setShowForm(true)} className="gap-2">
+          <TabsContent value="inventory" className="space-y-6 animate-fade-in">
+            {/* Action Buttons */}
+            <div className="glass-card p-4 flex flex-wrap gap-3">
+              <Button
+                onClick={() => setShowForm(true)}
+                className="glass-button gap-2"
+              >
                 <Plus className="h-4 w-4" />
                 Ajouter
               </Button>
-              <Button variant="outline" onClick={handleExportCSV} className="gap-2">
+              <Button
+                variant="outline"
+                onClick={handleExportCSV}
+                className="gap-2 border-border/50 hover:bg-secondary/50"
+              >
                 <Download className="h-4 w-4" />
                 Exporter CSV
               </Button>
               <ImportCSVButton />
-              <Button variant="outline" onClick={handleGenerateQRSheet} className="gap-2">
+              <Button
+                variant="outline"
+                onClick={handleGenerateQRSheet}
+                className="gap-2 border-border/50 hover:bg-secondary/50"
+              >
                 <FileText className="h-4 w-4" />
                 Générer étiquettes QR
               </Button>
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="glass-card p-12 flex justify-center">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full border-4 border-primary/20" />
+                  <div className="absolute inset-0 w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                </div>
               </div>
             ) : (
               <EquipmentList
@@ -210,12 +302,12 @@ const Index = () => {
           </TabsContent>
 
           {/* Scanner Tab */}
-          <TabsContent value="scanner" className="space-y-6">
+          <TabsContent value="scanner" className="space-y-6 animate-fade-in">
             <div className="flex justify-center">
               <Button
                 onClick={() => setShowScanner(!showScanner)}
                 size="lg"
-                className="gap-2"
+                className="glass-button gap-2"
               >
                 <ScanLine className="h-5 w-5" />
                 {showScanner ? "Fermer le scanner" : "Ouvrir le scanner"}
@@ -230,7 +322,7 @@ const Index = () => {
 
           {/* Admin Tab */}
           {isAdmin && (
-            <TabsContent value="admin" className="space-y-6">
+            <TabsContent value="admin" className="space-y-6 animate-fade-in">
               <AdminPanel />
             </TabsContent>
           )}
@@ -238,13 +330,12 @@ const Index = () => {
 
         {/* Equipment Form Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card border-border/50">
             <DialogHeader>
-              <DialogTitle>
+              <DialogTitle className="text-xl">
                 {editingEquipment ? "Modifier le matériel" : "Ajouter du matériel"}
               </DialogTitle>
             </DialogHeader>
-            {/* CORRECTION ICI : L'ajout de la 'key' force le composant à se recréer proprement à chaque ouverture */}
             <EquipmentForm
               key={editingEquipment ? editingEquipment.id : "new-equipment"}
               equipment={editingEquipment}
