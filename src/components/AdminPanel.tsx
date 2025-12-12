@@ -144,27 +144,37 @@ export const AdminPanel = () => {
     queryFn: async (): Promise<SystemLog[]> => {
       console.log("[AdminPanel] Fetching logs...");
       
-      const { data, error } = await supabase
-        .from("system_logs")
-        .select(`
-          id,
-          user_id,
-          action,
-          details,
-          created_at,
-          user_agent,
-          profiles:user_id (email, full_name)
-        `)
-        .order("created_at", { ascending: false })
-        .limit(200);
+      // Fetch logs and profiles separately (no FK relationship exists)
+      const [logsRes, profilesRes] = await Promise.all([
+        supabase
+          .from("system_logs")
+          .select("id, user_id, action, details, created_at, user_agent")
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("profiles")
+          .select("user_id, email, full_name")
+      ]);
 
-      if (error) {
-        console.error("[AdminPanel] Logs fetch error:", error);
-        throw error;
+      if (logsRes.error) {
+        console.error("[AdminPanel] Logs fetch error:", logsRes.error);
+        throw logsRes.error;
       }
 
-      console.log("[AdminPanel] Fetched logs:", data?.length || 0);
-      return (data || []) as unknown as SystemLog[];
+      // Create a lookup map for profiles
+      const profilesMap = new Map<string, { email: string | null; full_name: string | null }>();
+      (profilesRes.data || []).forEach((p) => {
+        profilesMap.set(p.user_id, { email: p.email, full_name: p.full_name });
+      });
+
+      // Merge logs with profile data
+      const logsWithProfiles = (logsRes.data || []).map((log) => ({
+        ...log,
+        profiles: log.user_id ? profilesMap.get(log.user_id) || null : null,
+      }));
+
+      console.log("[AdminPanel] Fetched logs:", logsWithProfiles.length);
+      return logsWithProfiles as SystemLog[];
     },
     staleTime: 10000,
     retry: 2,

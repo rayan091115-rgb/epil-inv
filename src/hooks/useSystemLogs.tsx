@@ -36,31 +36,38 @@ export const useSystemLogs = () => {
   }, []);
 
   /**
-   * Fetch system logs with pagination
+   * Fetch system logs with pagination - no FK join needed
    */
   const getSystemLogs = useCallback(async (limit = 100, offset = 0) => {
     try {
-      const { data, error } = await supabase
-        .from("system_logs")
-        .select(`
-          id,
-          user_id,
-          action,
-          details,
-          created_at,
-          user_agent,
-          ip_address,
-          profiles:user_id (email, full_name)
-        `)
-        .order("created_at", { ascending: false })
-        .range(offset, offset + limit - 1);
+      // Fetch logs and profiles separately (no FK relationship exists)
+      const [logsRes, profilesRes] = await Promise.all([
+        supabase
+          .from("system_logs")
+          .select("id, user_id, action, details, created_at, user_agent, ip_address")
+          .order("created_at", { ascending: false })
+          .range(offset, offset + limit - 1),
+        supabase
+          .from("profiles")
+          .select("user_id, email, full_name")
+      ]);
 
-      if (error) {
-        console.error("[SystemLogs] Fetch error:", error);
-        throw error;
+      if (logsRes.error) {
+        console.error("[SystemLogs] Fetch error:", logsRes.error);
+        throw logsRes.error;
       }
-      
-      return data || [];
+
+      // Create a lookup map for profiles
+      const profilesMap = new Map<string, { email: string | null; full_name: string | null }>();
+      (profilesRes.data || []).forEach((p) => {
+        profilesMap.set(p.user_id, { email: p.email, full_name: p.full_name });
+      });
+
+      // Merge logs with profile data
+      return (logsRes.data || []).map((log) => ({
+        ...log,
+        profiles: log.user_id ? profilesMap.get(log.user_id) || null : null,
+      }));
     } catch (error) {
       console.error("[SystemLogs] Error fetching logs:", error);
       return [];
