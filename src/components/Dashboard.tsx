@@ -23,104 +23,81 @@ import {
   TrendingUp,
   Activity,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardProps {
   equipment: Equipment[];
 }
 
-// Glass Stat Card Component
-const GlassStatCard = memo(
-  ({
-    title,
-    value,
-    icon: Icon,
-    description,
-    variant = "default",
-  }: {
-    title: string;
-    value: number | string;
-    icon: React.ElementType;
-    description: string;
-    variant?: "default" | "success" | "warning" | "danger";
-  }) => {
-    const variantStyles = {
-      default: "glow-blue",
-      success: "glow-green",
-      warning: "glow-yellow",
-      danger: "glow-red",
-    };
+// Monochrome colors
+const MONO_COLORS = {
+  OK: 'hsl(0, 0%, 20%)',
+  Panne: 'hsl(0, 0%, 50%)',
+  HS: 'hsl(0, 0%, 70%)',
+};
 
-    const iconColors = {
-      default: "text-primary",
-      success: "text-success",
-      warning: "text-warning",
-      danger: "text-destructive",
-    };
-
-    const bgColors = {
-      default: "bg-primary/10",
-      success: "bg-success/10",
-      warning: "bg-warning/10",
-      danger: "bg-destructive/10",
-    };
-
-    return (
-      <Card className={`${variantStyles[variant]} relative overflow-hidden`}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">
-                {title}
-              </p>
-              <p className={`text-3xl font-bold ${iconColors[variant]}`}>
-                {value}
-              </p>
-              <p className="text-xs text-muted-foreground">{description}</p>
-            </div>
-            <div className={`p-3 rounded-xl ${bgColors[variant]}`}>
-              <Icon className={`h-6 w-6 ${iconColors[variant]}`} />
-            </div>
-          </div>
-          {/* Decorative gradient overlay */}
-          <div className="absolute -right-8 -bottom-8 w-32 h-32 rounded-full bg-gradient-to-br from-primary/5 to-transparent blur-2xl" />
-        </CardContent>
-      </Card>
-    );
-  }
-);
-
-GlassStatCard.displayName = "GlassStatCard";
-
-// Custom Tooltip for Charts
-const GlassTooltip = ({ active, payload, label }: any) => {
+// Minimal Tooltip
+const MinimalTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="glass-card px-4 py-3 min-w-[120px]">
-      <p className="text-sm font-medium text-foreground mb-1">{label}</p>
+    <div className="glass-card px-3 py-2">
+      <p className="text-sm font-medium text-foreground">{label}</p>
       {payload.map((entry: any, index: number) => (
         <p key={index} className="text-xs text-muted-foreground">
-          {entry.name}: <span className="font-semibold text-foreground">{entry.value}</span>
+          {entry.name}: <span className="font-medium text-foreground">{entry.value}</span>
         </p>
       ))}
     </div>
   );
 };
 
+// Minimal Stat Card
+const StatCard = memo(
+  ({
+    title,
+    value,
+    icon: Icon,
+    description,
+  }: {
+    title: string;
+    value: number | string;
+    icon: React.ElementType;
+    description: string;
+  }) => {
+    return (
+      <Card className="glass-card-hover">
+        <CardContent className="p-6">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{title}</p>
+              <p className="text-3xl font-semibold tracking-tight">{value}</p>
+              <p className="text-xs text-muted-foreground">{description}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary">
+              <Icon className="h-5 w-5 text-foreground" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+);
+
+StatCard.displayName = "StatCard";
+
 // Loading Skeleton
 const DashboardSkeleton = () => (
   <div className="space-y-6 animate-fade-in">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="glass-skeleton h-32 rounded-2xl" />
+        <div key={i} className="glass-skeleton h-28 rounded-xl" />
       ))}
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className={`glass-skeleton h-80 rounded-2xl ${i === 2 ? "lg:col-span-2" : ""}`}
+          className={`glass-skeleton h-72 rounded-xl ${i === 2 ? "lg:col-span-2" : ""}`}
         />
       ))}
     </div>
@@ -128,7 +105,6 @@ const DashboardSkeleton = () => (
 );
 
 export const Dashboard = memo(({ equipment }: DashboardProps) => {
-  // Memoized calculations for performance
   const stats = useMemo(() => {
     const total = equipment.length;
     const ok = equipment.filter((e) => e.etat === "OK").length;
@@ -139,18 +115,16 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
     return { total, ok, panne, hs, okPercent };
   }, [equipment]);
 
-  // Status distribution for pie chart
   const statusData = useMemo(
     () =>
       [
-        { name: "OK", value: stats.ok, color: "hsl(var(--success))" },
-        { name: "Panne", value: stats.panne, color: "hsl(var(--warning))" },
-        { name: "HS", value: stats.hs, color: "hsl(var(--destructive))" },
+        { name: "OK", value: stats.ok, color: MONO_COLORS.OK },
+        { name: "Panne", value: stats.panne, color: MONO_COLORS.Panne },
+        { name: "HS", value: stats.hs, color: MONO_COLORS.HS },
       ].filter((item) => item.value > 0),
     [stats]
   );
 
-  // Category distribution for bar chart
   const categoryData = useMemo(
     () =>
       Object.entries(
@@ -165,7 +139,6 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
     [equipment]
   );
 
-  // Real monthly trend based on created_at dates
   const monthlyData = useMemo(() => {
     const now = new Date();
     const months: { month: string; count: number }[] = [];
@@ -194,59 +167,55 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* Stats Cards Grid */}
+    <div className="space-y-6 animate-fade-in">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-stagger">
-        <GlassStatCard
-          title="Total Équipements"
+        <StatCard
+          title="Total"
           value={stats.total}
           icon={Package}
-          description="Inventaire complet"
-          variant="default"
+          description="Équipements"
         />
-        <GlassStatCard
-          title="En Bon État"
+        <StatCard
+          title="En service"
           value={stats.ok}
           icon={CheckCircle}
           description={`${stats.okPercent}% du parc`}
-          variant="success"
         />
-        <GlassStatCard
-          title="En Panne"
+        <StatCard
+          title="En panne"
           value={stats.panne}
           icon={AlertTriangle}
-          description="Nécessite maintenance"
-          variant="warning"
+          description="À réparer"
         />
-        <GlassStatCard
-          title="Hors Service"
+        <StatCard
+          title="Hors service"
           value={stats.hs}
           icon={AlertCircle}
           description="À remplacer"
-          variant="danger"
         />
       </div>
 
-      {/* Charts Grid */}
+      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution Pie Chart */}
-        <Card className="chart-glass">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Répartition par État
+        {/* Status Pie Chart */}
+        <Card className="glass-card p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Répartition par état
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+          <CardContent className="p-0">
+            <ResponsiveContainer width="100%" height={240}>
               <PieChart>
                 <Pie
                   data={statusData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={4}
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
                   dataKey="value"
                   strokeWidth={0}
                 >
@@ -254,18 +223,17 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip content={<GlassTooltip />} />
+                <Tooltip content={<MinimalTooltip />} />
               </PieChart>
             </ResponsiveContainer>
-            {/* Legend */}
-            <div className="flex justify-center gap-6 mt-4">
+            <div className="flex justify-center gap-6">
               {statusData.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div
-                    className="w-3 h-3 rounded-full"
+                    className="w-2 h-2 rounded-full"
                     style={{ backgroundColor: item.color }}
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs text-muted-foreground">
                     {item.name}: {item.value}
                   </span>
                 </div>
@@ -274,35 +242,35 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Category Distribution Bar Chart */}
-        <Card className="chart-glass">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary" />
-              Équipements par Catégorie
+        {/* Category Bar Chart */}
+        <Card className="glass-card p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Package className="h-4 w-4" />
+              Par catégorie
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+          <CardContent className="p-0">
+            <ResponsiveContainer width="100%" height={260}>
               <BarChart data={categoryData} layout="vertical">
                 <CartesianGrid
                   strokeDasharray="3 3"
                   horizontal={true}
                   vertical={false}
-                  stroke="hsl(var(--border) / 0.5)"
+                  stroke="hsl(var(--border))"
                 />
-                <XAxis type="number" tick={{ fill: "hsl(var(--muted-foreground))" }} />
+                <XAxis type="number" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={80}
-                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                  width={70}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                 />
-                <Tooltip content={<GlassTooltip />} />
+                <Tooltip content={<MinimalTooltip />} />
                 <Bar
                   dataKey="count"
-                  fill="hsl(var(--primary))"
-                  radius={[0, 8, 8, 0]}
+                  fill="hsl(var(--foreground))"
+                  radius={[0, 4, 4, 0]}
                   name="Quantité"
                 />
               </BarChart>
@@ -310,37 +278,37 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
           </CardContent>
         </Card>
 
-        {/* Monthly Trend Area Chart */}
-        <Card className="chart-glass lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Évolution du Parc Informatique
+        {/* Monthly Trend */}
+        <Card className="glass-card p-6 lg:col-span-2">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Évolution du parc
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
+          <CardContent className="p-0">
+            <ResponsiveContainer width="100%" height={240}>
               <AreaChart data={monthlyData}>
                 <defs>
                   <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    <stop offset="5%" stopColor="hsl(var(--foreground))" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="hsl(var(--foreground))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="hsl(var(--border) / 0.5)"
+                  stroke="hsl(var(--border))"
                 />
                 <XAxis
                   dataKey="month"
-                  tick={{ fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }}
                 />
-                <YAxis tick={{ fill: "hsl(var(--muted-foreground))" }} />
-                <Tooltip content={<GlassTooltip />} />
+                <YAxis tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
+                <Tooltip content={<MinimalTooltip />} />
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="hsl(var(--primary))"
+                  stroke="hsl(var(--foreground))"
                   strokeWidth={2}
                   fill="url(#colorCount)"
                   name="Équipements"
