@@ -15,4 +15,15 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    chunkSizeWarningLimit: 2000, // Supprime l'avertissement
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Optimisation optionnelle : sépare les grosses dépendances
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+        }
+      }
+    }
+  }
 }));
