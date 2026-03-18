@@ -59,10 +59,10 @@ Header.displayName = "Header";
 
 // Loading Spinner
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background">
-    <div className="glass-card p-8 flex flex-col items-center gap-4">
-      <div className="w-8 h-8 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin" />
-      <p className="text-sm text-muted-foreground">Chargement...</p>
+  <div className="min-h-screen flex items-center justify-center bg-muted">
+    <div className="bg-card border border-border rounded-xl p-8 flex flex-col items-center gap-4 shadow-lg">
+      <div className="w-10 h-10 rounded-full border-3 border-muted-foreground/30 border-t-foreground animate-spin" />
+      <p className="text-base font-medium text-foreground">Chargement...</p>
     </div>
   </div>
 );
