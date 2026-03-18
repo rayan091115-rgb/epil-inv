@@ -48,8 +48,8 @@
     
     /* Glass Effect */
     --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 0 0% 0% / 0.06;
-    --glass-shadow: 0 0% 0% / 0.04;
+    --glass-border: 0 0% 0% / 0.15;
+    --glass-shadow: 0 0% 0% / 0.08;
     --glass-blur: 20px;
     
     /* Chart Colors - Grayscale */

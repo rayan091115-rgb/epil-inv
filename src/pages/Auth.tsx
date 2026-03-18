@@ -106,10 +106,10 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md glass-card">
+    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
+      <Card className="w-full max-w-md border border-border shadow-lg bg-card">
         <CardHeader className="text-center pb-2">
-          <CardTitle className="text-xl font-semibold">
+          <CardTitle className="text-2xl font-bold tracking-tight">
             Inventaire CIEL
           </CardTitle>
           <CardDescription className="text-muted-foreground">
