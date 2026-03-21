@@ -106,10 +106,13 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md border border-border shadow-lg bg-card">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4" style={{ background: 'linear-gradient(135deg, hsl(0 0% 95%), hsl(0 0% 88%))' }}>
+      <Card className="w-full max-w-md border-2 border-foreground/20 shadow-2xl bg-card">
         <CardHeader className="text-center pb-2">
-          <CardTitle className="text-2xl font-bold tracking-tight">
+          <div className="mx-auto mb-4 w-14 h-14 rounded-xl bg-foreground flex items-center justify-center">
+            <Lock className="h-7 w-7 text-background" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
             Inventaire CIEL
           </CardTitle>
           <CardDescription className="text-muted-foreground">
