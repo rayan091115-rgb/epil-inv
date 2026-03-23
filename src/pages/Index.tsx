@@ -14,8 +14,9 @@ import { Dashboard } from "@/components/Dashboard";
 import { AdminPanel } from "@/components/AdminPanel";
 import { EquipmentDetailModal } from "@/components/EquipmentDetailModal";
 import { ImportCSVButton } from "@/components/ImportCSVButton";
+import { AIScanner } from "@/components/AIScanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Download, LogOut, ScanLine, FileText, LayoutDashboard, Shield } from "lucide-react";
+import { Plus, Download, LogOut, ScanLine, FileText, LayoutDashboard, Shield, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -174,7 +175,14 @@ const Index = () => {
               className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
             >
               <ScanLine className="h-4 w-4" />
-              <span className="hidden sm:inline">Scanner</span>
+              <span className="hidden sm:inline">Scanner QR</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="ai-scanner"
+              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+            >
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <span className="hidden sm:inline">Scanner IA</span>
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger
@@ -188,7 +196,11 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="dashboard" className="animate-fade-in">
-            <Dashboard equipment={equipment} />
+            <Dashboard 
+              equipment={equipment} 
+              isLoading={isLoading}
+              onAddEquipment={() => setShowForm(true)}
+            />
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-4 animate-fade-in">
@@ -229,7 +241,7 @@ const Index = () => {
             <div className="flex justify-center">
               <Button onClick={() => setShowScanner(!showScanner)} size="lg" className="gap-2">
                 <ScanLine className="h-5 w-5" />
-                {showScanner ? "Fermer le scanner" : "Ouvrir le scanner"}
+                {showScanner ? "Fermer le scanner QR" : "Ouvrir le scanner QR"}
               </Button>
             </div>
             {showScanner && (
@@ -237,6 +249,10 @@ const Index = () => {
                 <QRScanner equipment={equipment} />
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="ai-scanner" className="animate-fade-in">
+            <AIScanner />
           </TabsContent>
 
           {isAdmin && (

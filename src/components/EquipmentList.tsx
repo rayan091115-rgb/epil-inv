@@ -49,6 +49,23 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
     });
   }, [safeEquipment, search, filterCategory, filterStatus]);
 
+  const handleDownloadAllQR = useCallback(async () => {
+    try {
+      toast({
+        title: "Génération en cours",
+        description: "Préparation de l'archive ZIP...",
+      });
+      const itemsToExport = filtered.map(item => ({ id: item.id, poste: item.poste }));
+      await qrGenerator.downloadMultipleQR(itemsToExport);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de générer l'archive",
+        variant: "destructive",
+      });
+    }
+  }, [filtered]);
+
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedItems = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -90,34 +107,43 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Inventaire du matériel ({filtered.length})</CardTitle>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <CardTitle>Inventaire du matériel ({filtered.length})</CardTitle>
+          {filtered.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleDownloadAllQR} className="w-full sm:w-auto">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger tous les QR (ZIP)
+            </Button>
+          )}
+        </div>
         <div className="flex flex-col sm:flex-row gap-3 mt-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher..."
+              placeholder="Rechercher un poste, une marque..."
+              aria-label="Rechercher du matériel"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               className="pl-10"
             />
           </div>
           <Select value={filterCategory} onValueChange={(v) => { setFilterCategory(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px]" aria-label="Filtrer par catégorie">
               <SelectValue placeholder="Catégorie" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Toutes</SelectItem>
+              <SelectItem value="all">Toutes les catégories</SelectItem>
               {categories.map((cat) => (
                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setCurrentPage(1); }}>
-            <SelectTrigger className="w-[140px]">
+            <SelectTrigger className="w-[140px]" aria-label="Filtrer par état">
               <SelectValue placeholder="État" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="all">Tous les états</SelectItem>
               <SelectItem value="OK">OK</SelectItem>
               <SelectItem value="Panne">Panne</SelectItem>
               <SelectItem value="HS">HS</SelectItem>
@@ -127,7 +153,7 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
       </CardHeader>
       <CardContent>
         <div className="rounded-lg border overflow-hidden">
-          <Table>
+          <Table aria-label="Liste de l'équipement">
             <TableHeader>
               <TableRow>
                 <TableHead>Poste</TableHead>

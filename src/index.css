@@ -304,4 +304,31 @@
   .animated-gradient {
     background: hsl(var(--background));
   }
+
+  /* Scanner Laser Beam */
+  .scanner-laser {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--primary)), transparent);
+    box-shadow: 0 0 15px hsl(var(--primary));
+    z-index: 10;
+    animation: scanner-beam 2s infinite ease-in-out;
+  }
+
+  @keyframes scanner-beam {
+    0% { top: 0%; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
+  }
+
+  .glass-card-premium {
+    @apply relative overflow-hidden rounded-3xl border border-white/10 dark:border-white/5;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  }
 }

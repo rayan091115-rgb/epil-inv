@@ -45,8 +45,12 @@ export const QRScanner = ({ equipment }: QRScannerProps) => {
           );
 
           if (!alreadyScanned) {
-            // Extraire l'ID de l'équipement depuis l'URL du QR code
-            const equipmentId = decodedText.split('/').pop();
+            // Extraire l'ID : soit le texte brut (ID), soit le dernier segment d'une URL
+            let equipmentId = decodedText;
+            if (decodedText.includes('/')) {
+              equipmentId = decodedText.split('/').filter(Boolean).pop() || decodedText;
+            }
+            
             const foundEquipment = equipment.find((e) => e.id === equipmentId);
             
             setScannedItems((prev) => [

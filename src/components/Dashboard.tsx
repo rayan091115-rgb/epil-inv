@@ -1,5 +1,6 @@
 import { memo, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Equipment } from "@/types/equipment";
 import {
   BarChart,
@@ -22,10 +23,13 @@ import {
   AlertTriangle,
   TrendingUp,
   Activity,
+  Plus,
 } from "lucide-react";
 
 interface DashboardProps {
   equipment: Equipment[];
+  isLoading?: boolean;
+  onAddEquipment?: () => void;
 }
 
 // Monochrome colors
@@ -85,26 +89,45 @@ const StatCard = memo(
 
 StatCard.displayName = "StatCard";
 
+// Empty State
+const EmptyState = ({ onAdd }: { onAdd?: () => void }) => (
+  <div className="flex flex-col items-center justify-center py-16 px-4 text-center animate-fade-in">
+    <div className="w-16 h-16 rounded-full bg-muted/80 flex items-center justify-center mb-4">
+      <Package className="h-8 w-8 text-muted-foreground" />
+    </div>
+    <h3 className="text-lg font-semibold mb-2">Aucun équipement</h3>
+    <p className="text-sm text-muted-foreground max-w-sm mb-6">
+      Le tableau de bord affichera les statistiques une fois que vous aurez ajouté des équipements.
+    </p>
+    {onAdd && (
+      <Button onClick={onAdd} className="gap-2">
+        <Plus className="h-4 w-4" />
+        Ajouter un équipement
+      </Button>
+    )}
+  </div>
+);
+
 // Loading Skeleton
 const DashboardSkeleton = () => (
   <div className="space-y-6 animate-fade-in">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(4)].map((_, i) => (
-        <div key={i} className="glass-skeleton h-28 rounded-xl" />
+        <div key={i} className="h-28 rounded-xl bg-muted/80 border border-border animate-pulse" />
       ))}
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className={`glass-skeleton h-72 rounded-xl ${i === 2 ? "lg:col-span-2" : ""}`}
+          className={`h-72 rounded-xl bg-muted/80 border border-border animate-pulse ${i === 2 ? "lg:col-span-2" : ""}`}
         />
       ))}
     </div>
   </div>
 );
 
-export const Dashboard = memo(({ equipment }: DashboardProps) => {
+export const Dashboard = memo(({ equipment, isLoading, onAddEquipment }: DashboardProps) => {
   const stats = useMemo(() => {
     const total = equipment.length;
     const ok = equipment.filter((e) => e.etat === "OK").length;
@@ -162,8 +185,12 @@ export const Dashboard = memo(({ equipment }: DashboardProps) => {
     return months;
   }, [equipment]);
 
-  if (equipment.length === 0) {
+  if (isLoading) {
     return <DashboardSkeleton />;
+  }
+
+  if (equipment.length === 0) {
+    return <EmptyState onAdd={onAddEquipment} />;
   }
 
   return (
