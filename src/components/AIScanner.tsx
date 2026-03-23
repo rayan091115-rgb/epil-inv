@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { groqService } from "@/lib/groq-service";
+import { geminiService } from "@/lib/gemini-service";
 import { aiEngine } from "@/lib/ai-engine";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -85,11 +85,11 @@ export const AIScanner = () => {
     setMatchedEquipment(null);
 
     try {
-      // Limit resolution to avoid Groq 400 error (max 33MP / 20MB)
+      // Limit resolution to avoid Gemini/API limits
       const imageSrc = webcamRef.current.getScreenshot({ width: 1280, height: 720 });
       if (!imageSrc) throw new Error("Impossible de capturer l'image");
 
-      const result = await groqService.identifyEquipment(imageSrc);
+      const result = await geminiService.identifyEquipment(imageSrc);
       setLastResult(result);
 
       // Search in DB
@@ -137,14 +137,32 @@ export const AIScanner = () => {
 
         {/* Real-time Bounding Boxes Layer */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Debug Status */}
-          <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
-            <Badge variant="outline" className="bg-black/40 text-[10px] text-white border-0 backdrop-blur-sm">
-              IA Ready: {isAIEngineReady ? "YES" : "NO"}
-            </Badge>
-            <Badge variant="outline" className="bg-black/40 text-[10px] text-white border-0 backdrop-blur-sm">
-              Détéctions: {detections.length}
-            </Badge>
+          {/* Diagnostic Dashboard (Always Visible for Debugging) */}
+          <div className="absolute top-4 left-4 z-50 flex flex-col gap-2 scale-90 origin-top-left">
+            <div className="bg-black/80 backdrop-blur-xl border border-white/20 p-3 rounded-2xl shadow-2xl min-w-[140px]">
+              <div className="text-[10px] text-zinc-400 font-medium mb-2 uppercase tracking-tight">Diagnostic Moteur</div>
+              
+              <div className="flex items-center justify-between gap-3 mb-1.5">
+                <span className="text-[11px] text-zinc-100">IA Moteur:</span>
+                <Badge variant="outline" className={`text-[9px] h-4 border-0 ${isAIEngineReady ? "bg-emerald-500/20 text-emerald-300" : "bg-orange-500/20 text-orange-300"}`}>
+                  {isAIEngineReady ? "PRÊT" : "CHARGEMENT"}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] text-zinc-100">Signaux:</span>
+                <span className={`text-[11px] font-mono px-1.5 rounded-md ${detections.length > 0 ? "bg-blue-500/20 text-blue-300 animate-pulse" : "bg-zinc-800 text-zinc-500"}`}>
+                  {detections.length} objet(s)
+                </span>
+              </div>
+            </div>
+            
+            {detections.length === 0 && isAIEngineReady && (
+              <div className="bg-orange-500/10 border border-orange-500/20 p-2 rounded-xl text-[9px] text-orange-200 backdrop-blur flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse" />
+                Ajustez le cadrage ou la lumière
+              </div>
+            )}
           </div>
 
           <AnimatePresence>
