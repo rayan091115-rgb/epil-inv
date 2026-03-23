@@ -126,7 +126,7 @@ export const AIScanner = () => {
           audio={false}
           ref={webcamRef}
           screenshotFormat="image/jpeg"
-          className="w-full h-full object-cover aspect-video scale-105 group-hover:scale-100 transition-transform duration-700"
+          className="w-full h-full object-contain aspect-video transition-transform duration-700 bg-black"
           videoConstraints={{ facingMode: "environment" }}
         />
 
@@ -137,6 +137,16 @@ export const AIScanner = () => {
 
         {/* Real-time Bounding Boxes Layer */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {/* Debug Status */}
+          <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
+            <Badge variant="outline" className="bg-black/40 text-[10px] text-white border-0 backdrop-blur-sm">
+              IA Ready: {isAIEngineReady ? "YES" : "NO"}
+            </Badge>
+            <Badge variant="outline" className="bg-black/40 text-[10px] text-white border-0 backdrop-blur-sm">
+              Détéctions: {detections.length}
+            </Badge>
+          </div>
+
           <AnimatePresence>
             {detections.map((det, idx) => (
               <motion.div
@@ -145,10 +155,10 @@ export const AIScanner = () => {
                 animate={{ 
                   opacity: 1, 
                   scale: 1,
-                  left: `${det.box.xmin}%`,
-                  top: `${det.box.ymin}%`,
-                  width: `${det.box.xmax - det.box.xmin}%`,
-                  height: `${det.box.ymax - det.box.ymin}%`
+                  left: `${det.box.xmin * 100}%`,
+                  top: `${det.box.ymin * 100}%`,
+                  width: `${(det.box.xmax - det.box.xmin) * 100}%`,
+                  height: `${(det.box.ymax - det.box.ymin) * 100}%`
                 }}
                 exit={{ opacity: 0 }}
                 className={`absolute border-2 rounded-lg backdrop-blur-[1px] transition-colors duration-300 ${
