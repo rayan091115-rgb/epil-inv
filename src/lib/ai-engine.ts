@@ -31,15 +31,15 @@ export const aiEngine = {
 
     try {
       const results = await engine(imageSource, {
-        threshold: 0.35, // Lower threshold for "Computer" detection to avoid missing towers
+        threshold: 0.15, // Extremely low threshold to catch dark towers
         percentage: true,
       });
       
-      // Filter for broad hardware categories including "Computer"
-      // Note: PC Towers are often misclassified as "refrigerator" or "microwave" by COCO models!
+      // Filter for broad hardware categories including common misclassifications
       const hardwareLabels = [
         "computer", "laptop", "monitor", "tv", "desktop computer", 
-        "central system unit", "refrigerator", "microwave", "appliance"
+        "central system unit", "refrigerator", "microwave", "appliance",
+        "suitcase", "box", "bed", "couch", "trash can"
       ];
 
       return results.filter((item: any) => 

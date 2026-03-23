@@ -85,7 +85,8 @@ export const AIScanner = () => {
     setMatchedEquipment(null);
 
     try {
-      const imageSrc = webcamRef.current.getScreenshot();
+      // Limit resolution to avoid Groq 400 error (max 33MP / 20MB)
+      const imageSrc = webcamRef.current.getScreenshot({ width: 1280, height: 720 });
       if (!imageSrc) throw new Error("Impossible de capturer l'image");
 
       const result = await groqService.identifyEquipment(imageSrc);

@@ -23,7 +23,15 @@ export const groqService = {
             content: [
               {
                 type: "text",
-                text: "Analyze this image of a computer or IT equipment. Identify the Brand, Model Name, and if visible, the Serial Number or Asset Tag. Return ONLY valid JSON with keys: brand, model, serialNumber, details. Use null if not found. Do NOT include markdown formatting or backticks.",
+                text: `You are an expert Computer Hardware Inventory Agent. Analyze this IT equipment image.
+                - BRAND: Dell, HP, Lenovo, etc.
+                - MODEL: Exact model name (e.g. OptiPlex 7040).
+                - SERIAL: Look for 'S/N', 'Service Tag', or 'Serial Number'.
+                - DETAILS: Note visible ports, size (SFF, Tower), or asset tags.
+                
+                RETURN ONLY A JSON OBJECT matching this schema:
+                { "brand": "string|null", "model": "string|null", "serialNumber": "string|null", "details": "string|null" }
+                NO markdown, NO backticks, NO extra text.`,
               },
               {
                 type: "image_url",
@@ -37,9 +45,12 @@ export const groqService = {
       });
 
       const content = response.choices[0]?.message?.content?.trim() || "{}";
-      // Basic JSON cleaning if necessary (removing potential markdown markers)
-      const cleanJson = content.replace(/```json|```/g, "").trim();
-      return JSON.parse(cleanJson);
+      
+      // Robust JSON extraction using regex to find the first '{' and last '}'
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error("Aucune donnée structurée trouvée");
+      
+      return JSON.parse(jsonMatch[0]);
     } catch (error) {
       console.error("Error in Groq identification:", error);
       throw error;
