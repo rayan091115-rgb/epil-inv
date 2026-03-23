@@ -110,7 +110,8 @@ export const AIScanner = () => {
       }
 
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'identification");
+      console.error("Identification error:", error);
+      toast.error("Échec de l'identification : le modèle n'a pas renvoyé un format valide ou l'image est trop complexe.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -127,6 +128,11 @@ export const AIScanner = () => {
           className="w-full h-full object-cover aspect-video scale-105 group-hover:scale-100 transition-transform duration-700"
           videoConstraints={{ facingMode: "environment" }}
         />
+
+        {/* Centering Guide (Fixed) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity">
+          <div className="w-[80%] h-[80%] border-2 border-dashed border-white rounded-3xl" />
+        </div>
 
         {/* Real-time Bounding Boxes Layer */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -153,7 +159,7 @@ export const AIScanner = () => {
                 <div className={`absolute -top-6 left-0 text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider transition-colors ${
                   (det as any).isPrecision ? "bg-green-500 shadow-md" : "bg-primary/90"
                 }`}>
-                  {(det as any).isPrecision ? "CONFIRMÉ: " : ""}{det.label} {Math.round(det.score * 100)}%
+                  {(det as any).isPrecision ? "VÉRIFIÉ: " : ""}{det.label} {Math.round(det.score * 100)}%
                 </div>
               </motion.div>
             ))}

@@ -23,7 +23,7 @@ export const groqService = {
             content: [
               {
                 type: "text",
-                text: "Analyze this image of a computer or IT equipment. Identify the Brand, Model Name, and if visible, the Serial Number or Asset Tag. Return ONLY a JSON object with these keys: brand, model, serialNumber, details. If something is not visible, use null.",
+                text: "Analyze this image of a computer or IT equipment. Identify the Brand, Model Name, and if visible, the Serial Number or Asset Tag. Return ONLY valid JSON with keys: brand, model, serialNumber, details. Use null if not found. Do NOT include markdown formatting or backticks.",
               },
               {
                 type: "image_url",
@@ -34,13 +34,12 @@ export const groqService = {
             ],
           },
         ],
-        response_format: { type: "json_object" },
       });
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) throw new Error("Réponse vide de l'IA");
-      
-      return JSON.parse(content);
+      const content = response.choices[0]?.message?.content?.trim() || "{}";
+      // Basic JSON cleaning if necessary (removing potential markdown markers)
+      const cleanJson = content.replace(/```json|```/g, "").trim();
+      return JSON.parse(cleanJson);
     } catch (error) {
       console.error("Error in Groq identification:", error);
       throw error;
