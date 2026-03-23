@@ -37,20 +37,39 @@ RETURN ONLY A JSON OBJECT:
   "serialNumber": "string|null",
   "details": "string|null"
 }`;
-
-    const result = await model.generateContent([
-      prompt,
-      {
-        inlineData: {
-          data: base64Data,
-          mimeType: "image/jpeg",
-        },
-      },
-    ]);
-
-    const response = await result.response;
-    const text = response.text();
     
+    let text = "";
+    
+    try {
+      // First attempt with the fast 3.1 model
+      const result = await model.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: "image/jpeg",
+          },
+        },
+      ]);
+      const response = await result.response;
+      text = response.text();
+    } catch (error) {
+      console.warn("Gemini 3.1 failed, falling back to Gemini 1.5 Flash:", error);
+      // Fallback to the stable 1.5 flash model if 3.1 is not available for this key
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const fallbackResult = await fallbackModel.generateContent([
+        prompt,
+        {
+          inlineData: {
+            data: base64Data,
+            mimeType: "image/jpeg",
+          },
+        },
+      ]);
+      const fallbackResponse = await fallbackResult.response;
+      text = fallbackResponse.text();
+    }
+
     // Robust extraction
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Format JSON non trouvé dans la réponse Gemini");

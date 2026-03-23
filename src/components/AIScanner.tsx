@@ -44,10 +44,14 @@ export const AIScanner = () => {
   const [isSearchingDB, setIsSearchingDB] = useState(false);
   const [detections, setDetections] = useState<DetectionBox[]>([]);
   const [isAIEngineReady, setIsAIEngineReady] = useState(false);
+  const [engineError, setEngineError] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   // Initialize AI Engine
   useEffect(() => {
-    aiEngine.init().then(() => setIsAIEngineReady(true));
+    aiEngine.init()
+      .then(() => setIsAIEngineReady(true))
+      .catch((e) => setEngineError(e.message || "Build/Fetch Error"));
   }, []);
 
   // Detection Loop
@@ -112,7 +116,8 @@ export const AIScanner = () => {
 
     } catch (error: any) {
       console.error("Identification error:", error);
-      toast.error("Échec de l'identification : le modèle n'a pas renvoyé un format valide ou l'image est trop complexe.");
+      setScanError(error.message || "Erreur inconnue");
+      toast.error("Échec : " + (error.message || "Format invalide ou image complexe."));
     } finally {
       setIsAnalyzing(false);
     }
@@ -144,8 +149,8 @@ export const AIScanner = () => {
               
               <div className="flex items-center justify-between gap-3 mb-1.5">
                 <span className="text-[11px] text-zinc-100">IA Moteur:</span>
-                <Badge variant="outline" className={`text-[9px] h-4 border-0 ${isAIEngineReady ? "bg-emerald-500/20 text-emerald-300" : "bg-orange-500/20 text-orange-300"}`}>
-                  {isAIEngineReady ? "PRÊT" : "CHARGEMENT"}
+                <Badge variant="outline" className={`text-[9px] h-4 border-0 tracking-widest ${engineError ? "bg-red-500/20 text-red-300" : isAIEngineReady ? "bg-emerald-500/20 text-emerald-300" : "bg-orange-500/20 text-orange-300 animate-pulse"}`}>
+                  {engineError ? "ERREUR" : isAIEngineReady ? "PRÊT" : "INIT..."}
                 </Badge>
               </div>
 
@@ -155,6 +160,15 @@ export const AIScanner = () => {
                   {detections.length} objet(s)
                 </span>
               </div>
+
+              {/* Error Console */}
+              {(engineError || scanError) && (
+                <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1">
+                  <span className="text-[9px] text-zinc-500 font-mono uppercase">Logs Systèmes</span>
+                  {engineError && <div className="text-[9px] font-mono text-red-400 leading-tight">Moteur: {engineError}</div>}
+                  {scanError && <div className="text-[9px] font-mono text-amber-400 leading-tight">API: {scanError}</div>}
+                </div>
+              )}
             </div>
             
             {detections.length === 0 && isAIEngineReady && (

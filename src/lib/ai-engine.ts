@@ -1,4 +1,12 @@
-import { pipeline } from "@xenova/transformers";
+import { pipeline, env } from "@xenova/transformers";
+
+// CRITICAL FIX: Prevent Transformers.js from failing on Vite's index.html fallback
+// This forces downloading the models directly from HuggingFace Hub
+env.allowLocalModels = false;
+env.useBrowserCache = false;
+
+// CRITICAL FIX 2: Point WASM paths to a public CDN so Vite doesn't intercept the .wasm file requests
+env.backends.onnx.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.14.0/dist/';
 
 let detectorFast: any = null;
 let detectorPrecision: any = null;
@@ -7,13 +15,12 @@ export const aiEngine = {
   init: async () => {
     try {
       if (!detectorFast) {
-        // Standard YOLOv8n is widely supported and fast
-        detectorFast = await pipeline("object-detection", "Xenova/yolov8n");
-        console.log("Fast AI Engine initialized (YOLOv8n)");
+        // Fallback to detr-resnet-50 for both fast and precision because yolov8n throws 401 on Hugging Face now
+        detectorFast = await pipeline("object-detection", "Xenova/detr-resnet-50");
+        console.log("Fast AI Engine initialized (DETR)");
       }
       
       if (!detectorPrecision) {
-        // DETR-ResNet-50 is the gold standard for accurate object detection in Transformers.js
         detectorPrecision = await pipeline("object-detection", "Xenova/detr-resnet-50");
         console.log("Precision AI Engine initialized (DETR)");
       }
@@ -21,6 +28,7 @@ export const aiEngine = {
       console.error("Failed to initialize AI Engine:", error);
     }
   },
+
 
   detect: async (imageSource: string | HTMLImageElement, usePrecision = false) => {
     // Ensure engines are initialized
