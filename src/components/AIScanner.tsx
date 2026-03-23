@@ -55,14 +55,20 @@ export const AIScanner = () => {
     if (!isAIEngineReady || isAnalyzing) return;
 
     let animationId: number;
+    let frameCount = 0;
+
     const runDetection = async () => {
       if (webcamRef.current && webcamRef.current.video?.readyState === 4) {
         const imageSrc = webcamRef.current.getScreenshot();
         if (imageSrc) {
-          const results = await aiEngine.detect(imageSrc);
-          setDetections(results);
+          // Use Precision (RF-DETR) every 30 frames (~0.5-1s) to confirm hardware
+          const usePrecision = frameCount % 30 === 0;
+          const results = await aiEngine.detect(imageSrc, usePrecision);
+          
+          setDetections(results.map(r => ({ ...r, isPrecision: usePrecision })));
         }
       }
+      frameCount++;
       animationId = requestAnimationFrame(runDetection);
     };
 
@@ -138,10 +144,16 @@ export const AIScanner = () => {
                   height: `${det.box.ymax - det.box.ymin}%`
                 }}
                 exit={{ opacity: 0 }}
-                className="absolute border-2 border-primary/60 rounded-lg bg-primary/5 backdrop-blur-[1px]"
+                className={`absolute border-2 rounded-lg backdrop-blur-[1px] transition-colors duration-300 ${
+                  (det as any).isPrecision 
+                    ? "border-green-400 bg-green-400/10 shadow-[0_0_15px_rgba(74,222,128,0.5)]" 
+                    : "border-primary/60 bg-primary/5"
+                }`}
               >
-                <div className="absolute -top-6 left-0 bg-primary/90 text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                  {det.label} {Math.round(det.score * 100)}%
+                <div className={`absolute -top-6 left-0 text-[10px] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider transition-colors ${
+                  (det as any).isPrecision ? "bg-green-500 shadow-md" : "bg-primary/90"
+                }`}>
+                  {(det as any).isPrecision ? "CONFIRMÉ: " : ""}{det.label} {Math.round(det.score * 100)}%
                 </div>
               </motion.div>
             ))}

@@ -16,7 +16,7 @@ export const groqService = {
 
     try {
       const response = await groq.chat.completions.create({
-        model: "moonshotai/kimi-k2-vision-preview",
+        model: "moonshotai/kimi-k2-instruct-0905",
         messages: [
           {
             role: "user",
