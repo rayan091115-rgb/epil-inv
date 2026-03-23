@@ -36,7 +36,7 @@ interface DetectionBox {
 
 export const AIScanner = () => {
   const webcamRef = useRef<Webcam>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const viewBoxRef = useRef<HTMLDivElement>(null);
   
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
@@ -113,7 +113,7 @@ export const AIScanner = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 max-w-7xl mx-auto">
       {/* Viewfinder Section */}
-      <Card className="overflow-hidden border-0 shadow-2xl bg-black rounded-3xl relative group">
+      <Card ref={viewBoxRef} className="overflow-hidden border-0 shadow-2xl bg-black rounded-3xl relative group">
         <Webcam
           audio={false}
           ref={webcamRef}
@@ -161,23 +161,27 @@ export const AIScanner = () => {
         {/* UI Overlay */}
         <div className="absolute inset-0 flex flex-col justify-between p-6 pointer-events-none">
           <div className="flex justify-between items-start">
-            <div className="glass-card px-4 py-2 flex items-center gap-2 bg-black/40 backdrop-blur-md">
-              <Sparkles className="h-4 w-4 text-amber-400 animate-pulse" />
-              <span className="text-white text-xs font-bold tracking-widest uppercase">Smart Scanner V2</span>
-            </div>
             {!isAIEngineReady && (
               <Badge variant="secondary" className="bg-amber-500/20 text-white border-0">
                 Initialisation IA...
               </Badge>
             )}
-            <motion.div
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              className="glass-card-premium px-5 py-2.5 flex items-center gap-3 bg-black/40"
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-black/40 border-white/20 text-white hover:bg-black/60 glass-card-premium pointer-events-auto"
+              onClick={() => {
+                if (viewBoxRef.current) {
+                  if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                  } else {
+                    viewBoxRef.current.requestFullscreen();
+                  }
+                }
+              }}
             >
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-white text-[10px] font-black tracking-[0.2em] uppercase">Vision Engine v11.0</span>
-            </motion.div>
+              Mode Plein Écran
+            </Button>
           </div>
 
           <div className="flex flex-col items-center gap-8 pointer-events-auto">
@@ -221,7 +225,7 @@ export const AIScanner = () => {
                 <Cpu className="h-5 w-5 text-primary" />
                 Détails de l'Analyse
               </div>
-              {isAnalyzing && <Badge variant="outline" className="animate-pulse bg-primary/10 border-primary/20">Llama 3.2 Vision...</Badge>}
+              {isAnalyzing && <Badge variant="outline" className="animate-pulse bg-primary/10 border-primary/20">Kimi K2 Analysis...</Badge>}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6">
