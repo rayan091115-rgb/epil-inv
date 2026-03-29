@@ -24,11 +24,19 @@ export const PhotosTab = ({ equipmentId }: PhotosTabProps) => {
 
       if (error) throw error;
 
-      return (data || []).map((file) => ({
+      const files = data || [];
+      if (files.length === 0) return [];
+
+      const paths = files.map((file) => `${equipmentId}/${file.name}`);
+      const { data: signed, error: signError } = await supabase.storage
+        .from("equipment_photos")
+        .createSignedUrls(paths, 3600);
+
+      if (signError) throw signError;
+
+      return files.map((file, i) => ({
         name: file.name,
-        url: supabase.storage
-          .from("equipment_photos")
-          .getPublicUrl(`${equipmentId}/${file.name}`).data.publicUrl,
+        url: signed?.[i]?.signedUrl ?? "",
       }));
     },
   });
