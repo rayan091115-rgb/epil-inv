@@ -11,7 +11,15 @@ import { isSupabaseConfigured } from "@/integrations/supabase/client";
 
 const Admin = lazy(() => import("./pages/Admin"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes default cache
+      retry: 2,
+      retryDelay: 1000,
+    },
+  },
+});
 
 // Configuration Error Component
 const ConfigError = () => (

@@ -71,7 +71,7 @@ const LoadingSpinner = () => (
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { equipment, isLoading, addEquipmentAsync, updateEquipment, deleteEquipment } = useEquipment();
+  const { equipment, isLoading, addEquipmentAsync, updateEquipment, deleteEquipment } = useEquipment(user);
   const { isAdmin, loading: roleLoading } = useUserRole(user?.id);
   
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);

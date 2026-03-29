@@ -169,11 +169,12 @@ export const Dashboard = memo(({ equipment, isLoading, onAddEquipment }: Dashboa
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthName = date.toLocaleDateString("fr-FR", { month: "short" });
+      const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
       const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0);
 
       const count = equipment.filter((e) => {
         const created = new Date(e.createdAt);
-        return created <= endOfMonth;
+        return created >= startOfMonth && created <= endOfMonth;
       }).length;
 
       months.push({

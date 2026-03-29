@@ -10,7 +10,7 @@ import { qrGenerator } from "@/lib/qr-generator";
  * - Gestion d'erreur robuste sans déconnexion
  * - Retry automatique sur erreur réseau
  */
-export const useEquipment = () => {
+export const useEquipment = (user?: any) => {
   const queryClient = useQueryClient();
 
   // Helper to normalize text fields
@@ -57,6 +57,7 @@ export const useEquipment = () => {
         locationId: item.location_id,
       })) as Equipment[];
     },
+    enabled: !!user, // Only fetch when user is authenticated
     staleTime: 30000, // 30 seconds cache
     retry: 2,
     retryDelay: 1000,

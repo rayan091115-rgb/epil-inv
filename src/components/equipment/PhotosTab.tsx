@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/use-toast";
-import { Upload, ImageIcon, Trash2, Loader2 } from "lucide-react";
+import { Upload, ImageIcon, Trash2, Loader2, Download } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface PhotosTabProps {
@@ -61,6 +61,28 @@ export const PhotosTab = ({ equipmentId }: PhotosTabProps) => {
       });
     },
   });
+
+  const downloadPhoto = async (photoName: string, url: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = photoName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      toast({ title: "Photo téléchargée" });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de télécharger la photo",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -162,14 +184,20 @@ export const PhotosTab = ({ equipmentId }: PhotosTabProps) => {
                 alt={photo.name}
                 className="w-full h-48 object-cover"
               />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => downloadPhoto(photo.name, photo.url)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                </Button>
                 <Button
                   size="sm"
                   variant="destructive"
                   onClick={() => deletePhoto.mutate(photo.name)}
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
                 </Button>
               </div>
             </Card>

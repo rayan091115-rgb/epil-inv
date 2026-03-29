@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit, Trash2, Search, QrCode, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { qrGenerator } from "@/lib/qr-generator";
@@ -26,6 +27,7 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedQR, setSelectedQR] = useState<{ url: string; name: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   const safeEquipment = Array.isArray(equipment) ? equipment : [];
 
@@ -94,6 +96,21 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
       });
     }
   }, [selectedQR]);
+
+  const handleDeleteClick = useCallback((item: Equipment) => {
+    setDeleteConfirm({ id: item.id, name: item.poste });
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (deleteConfirm) {
+      onDelete(deleteConfirm.id);
+      setDeleteConfirm(null);
+      toast({
+        title: "Équipement supprimé",
+        description: `${deleteConfirm.name} a été supprimé.`,
+      });
+    }
+  }, [deleteConfirm, onDelete]);
 
   const getStatusBadge = useCallback((status: string) => {
     const variants: Record<string, "default" | "destructive" | "secondary"> = {
@@ -189,7 +206,7 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
                         <Button size="icon" variant="ghost" onClick={() => onEdit(item)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" onClick={() => onDelete(item.id)}>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteClick(item)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -244,6 +261,23 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteConfirm} onOpenChange={() => setDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer l'équipement "{deleteConfirm?.name}" ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 });
