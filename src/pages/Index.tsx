@@ -155,31 +155,31 @@ const Index = () => {
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="glass-card p-1 h-auto grid w-full grid-cols-2 lg:grid-cols-4 gap-1">
+          <TabsList className="glass-card p-1 h-auto flex flex-wrap sm:flex-nowrap justify-start gap-1 w-full overflow-x-auto">
             <TabsTrigger
               value="dashboard"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 flex-1 sm:flex-initial flex-shrink-0 min-w-0 justify-center items-center"
             >
               <LayoutDashboard className="h-4 w-4" />
               <span className="hidden sm:inline">Tableau de bord</span>
             </TabsTrigger>
             <TabsTrigger
               value="inventory"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 flex-1 sm:flex-initial flex-shrink-0 min-w-0 justify-center items-center"
             >
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Inventaire</span>
             </TabsTrigger>
             <TabsTrigger
               value="scanner"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 flex-1 sm:flex-initial flex-shrink-0 min-w-0 justify-center items-center"
             >
               <ScanLine className="h-4 w-4" />
               <span className="hidden sm:inline">Scanner QR</span>
             </TabsTrigger>
             <TabsTrigger
               value="ai-scanner"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 flex-1 sm:flex-initial flex-shrink-0 min-w-0 justify-center items-center"
             >
               <Sparkles className="h-4 w-4 text-amber-500" />
               <span className="hidden sm:inline">Scanner IA</span>
@@ -187,7 +187,7 @@ const Index = () => {
             {isAdmin && (
               <TabsTrigger
                 value="admin"
-                className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5"
+                className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 flex-1 sm:flex-initial flex-shrink-0 min-w-0 justify-center items-center"
               >
                 <Shield className="h-4 w-4" />
                 <span className="hidden sm:inline">Admin</span>
