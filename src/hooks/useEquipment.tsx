@@ -20,6 +20,30 @@ export const useEquipment = (user?: any) => {
   const normalizeDate = (v?: string) =>
     v && v.trim() !== "" ? v.trim() : null;
 
+  // Client-side validation for equipment data
+  const validateEquipmentData = (data: Partial<Equipment>) => {
+    const errors: string[] = [];
+    
+    if (!data.poste || data.poste.trim() === "") {
+      errors.push("Le poste est obligatoire");
+    }
+    
+    if (!data.category) {
+      errors.push("La catégorie est obligatoire");
+    }
+    
+    if (!data.etat) {
+      errors.push("L'état est obligatoire");
+    }
+    
+    // Validate serial number format if provided
+    if (data.numeroSerie && data.numeroSerie.trim().length > 50) {
+      errors.push("Le numéro de série ne doit pas dépasser 50 caractères");
+    }
+    
+    return errors;
+  };
+
   // Fetch all equipment with retry and stale time
   const { data: equipment = [], isLoading, error } = useQuery({
     queryKey: ["equipment"],
@@ -66,6 +90,12 @@ export const useEquipment = (user?: any) => {
   // Add equipment with optimistic update
   const addEquipment = useMutation({
     mutationFn: async (data: Partial<Equipment>) => {
+      // Validate data before submission
+      const validationErrors = validateEquipmentData(data);
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join(", "));
+      }
+      
       const tempId = crypto.randomUUID();
       
       // Generate QR code
@@ -111,9 +141,12 @@ export const useEquipment = (user?: any) => {
       // Snapshot previous value
       const previousEquipment = queryClient.getQueryData<Equipment[]>(["equipment"]);
       
-      // Optimistically add the new equipment
+      // Generate consistent tempId for both optimistic update and actual mutation
+      const tempId = crypto.randomUUID();
+      
+      // Optimistically add the new equipment with same tempId
       const tempEquipment: Equipment = {
-        id: crypto.randomUUID(),
+        id: tempId,
         poste: newData.poste || "",
         category: (newData.category || "PC") as Equipment["category"],
         marque: newData.marque || null,
@@ -160,23 +193,30 @@ export const useEquipment = (user?: any) => {
   // Update equipment
   const updateEquipment = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Equipment> }) => {
-      const updateData = {
-        poste: data.poste,
-        category: data.category,
-        marque: normalizeText(data.marque),
-        modele: normalizeText(data.modele),
-        numero_serie: normalizeText(data.numeroSerie),
-        etat: data.etat,
-        date_achat: normalizeDate(data.dateAchat),
-        fin_garantie: normalizeDate(data.finGarantie),
-        notes: normalizeText(data.notes),
-        processeur: normalizeText(data.processeur),
-        ram: normalizeText(data.ram),
-        capacite_dd: normalizeText(data.capaciteDd),
-        alimentation: data.alimentation,
-        os: normalizeText(data.os),
-        adresse_mac: normalizeText(data.adresseMac),
-      };
+      // Validate data before submission
+      const validationErrors = validateEquipmentData(data);
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join(", "));
+      }
+      
+      // Only include defined fields to prevent data corruption
+      const updateData: any = {};
+      
+      if (data.poste !== undefined) updateData.poste = data.poste;
+      if (data.category !== undefined) updateData.category = data.category;
+      if (data.marque !== undefined) updateData.marque = normalizeText(data.marque);
+      if (data.modele !== undefined) updateData.modele = normalizeText(data.modele);
+      if (data.numeroSerie !== undefined) updateData.numero_serie = normalizeText(data.numeroSerie);
+      if (data.etat !== undefined) updateData.etat = data.etat;
+      if (data.dateAchat !== undefined) updateData.date_achat = normalizeDate(data.dateAchat);
+      if (data.finGarantie !== undefined) updateData.fin_garantie = normalizeDate(data.finGarantie);
+      if (data.notes !== undefined) updateData.notes = normalizeText(data.notes);
+      if (data.processeur !== undefined) updateData.processeur = normalizeText(data.processeur);
+      if (data.ram !== undefined) updateData.ram = normalizeText(data.ram);
+      if (data.capaciteDd !== undefined) updateData.capacite_dd = normalizeText(data.capaciteDd);
+      if (data.alimentation !== undefined) updateData.alimentation = data.alimentation;
+      if (data.os !== undefined) updateData.os = normalizeText(data.os);
+      if (data.adresseMac !== undefined) updateData.adresse_mac = normalizeText(data.adresseMac);
 
       const { error } = await supabase
         .from("equipment")

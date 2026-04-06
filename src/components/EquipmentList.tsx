@@ -37,12 +37,15 @@ export const EquipmentList = memo(({ equipment = [], onEdit, onDelete, onEquipme
   }, [safeEquipment]);
 
   const filtered = useMemo(() => {
+    // Pre-compute normalized search term to avoid repeated toLowerCase() calls
+    const normalizedSearch = search.toLowerCase().trim();
+    
     return safeEquipment.filter((item) => {
-      const matchesSearch =
-        (item.poste?.toLowerCase() || "").includes(search.toLowerCase()) ||
-        (item.marque?.toLowerCase() || "").includes(search.toLowerCase()) ||
-        (item.modele?.toLowerCase() || "").includes(search.toLowerCase()) ||
-        (item.numeroSerie?.toLowerCase() || "").includes(search.toLowerCase());
+      const matchesSearch = !normalizedSearch || 
+        (item.poste?.toLowerCase().includes(normalizedSearch) ||
+         item.marque?.toLowerCase().includes(normalizedSearch) ||
+         item.modele?.toLowerCase().includes(normalizedSearch) ||
+         item.numeroSerie?.toLowerCase().includes(normalizedSearch));
 
       const matchesCategory = filterCategory === "all" || !filterCategory || item.category === filterCategory;
       const matchesStatus = filterStatus === "all" || !filterStatus || item.etat === filterStatus;

@@ -91,14 +91,24 @@ const Index = () => {
       await addEquipmentAsync(data);
       setShowForm(false);
       setEditingEquipment(null);
+      toast.success("Matériel ajouté avec succès");
     } catch (error) {
       console.error("[Index] Add equipment error:", error);
+      toast.error("Erreur lors de l'ajout du matériel");
     }
   }, [addEquipmentAsync]);
 
   const handleUpdateEquipment = useCallback((data: Partial<Equipment>) => {
     if (!editingEquipment) return;
-    updateEquipment({ id: editingEquipment.id, data });
+    try {
+      updateEquipment({ id: editingEquipment.id, data });
+      setEditingEquipment(null);
+      setShowForm(false);
+      toast.success("Matériel mis à jour avec succès");
+    } catch (error) {
+      console.error("[Index] Update equipment error:", error);
+      toast.error("Erreur lors de la mise à jour du matériel");
+    }
     setEditingEquipment(null);
     setShowForm(false);
   }, [editingEquipment, updateEquipment]);
@@ -142,7 +152,11 @@ const Index = () => {
     return <LoadingSpinner />;
   }
 
-  if (!user) return null;
+  if (!user) {
+    // Redirect immediately if no user and not loading
+    navigate("/auth", { replace: true });
+    return <LoadingSpinner />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -262,7 +276,12 @@ const Index = () => {
           )}
         </Tabs>
 
-        <Dialog open={showForm} onOpenChange={setShowForm}>
+        <Dialog open={showForm} onOpenChange={(open) => {
+    setShowForm(open);
+    if (!open) {
+      setEditingEquipment(null);
+    }
+  }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card">
             <DialogHeader>
               <DialogTitle>

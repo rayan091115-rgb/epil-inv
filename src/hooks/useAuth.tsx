@@ -137,20 +137,25 @@ export const useAuth = () => {
 
   const signOut = useCallback(async () => {
     try {
-      // Clear local state first for immediate UI feedback
-      setUser(null);
-      setSession(null);
-      
-      // Then perform actual sign out
+      // Perform actual sign out first
       const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("[Auth] Sign out error:", error);
+        // Still navigate even on error to prevent stuck state
       }
       
+      // Clear local state after server confirmation
+      setUser(null);
+      setSession(null);
+      
+      // Navigate only after signout is complete
       navigate("/auth");
     } catch (error) {
       console.error("[Auth] Sign out error:", error);
+      // Clear state and navigate even on error
+      setUser(null);
+      setSession(null);
       navigate("/auth");
     }
   }, [navigate]);
