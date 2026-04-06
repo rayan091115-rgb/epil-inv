@@ -16,64 +16,119 @@ import { EquipmentDetailModal } from "@/components/EquipmentDetailModal";
 import { ImportCSVButton } from "@/components/ImportCSVButton";
 import { AIScanner } from "@/components/AIScanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Download, LogOut, ScanLine, FileText, LayoutDashboard, Shield, Sparkles } from "lucide-react";
+import { Plus, Download, LogOut, ScanLine, FileText, LayoutDashboard, Shield, Sparkles, Package } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Header Component
-const Header = memo(({
+// ── Topbar ──────────────────────────────────────────────────────────────────
+const Topbar = memo(({
   email,
   isAdmin,
-  onNavigateAdmin,
-  onSignOut
+  onSignOut,
 }: {
   email: string;
   isAdmin: boolean;
-  onNavigateAdmin: () => void;
   onSignOut: () => void;
 }) => (
-  <header className="glass-card px-6 py-4 mb-6">
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <div>
-        <h1 className="text-xl font-semibold">Inventaire CIEL</h1>
-        <p className="text-sm text-muted-foreground">
-          {email}
-          {isAdmin && <span className="ml-2 font-medium">• Admin</span>}
-        </p>
+  <header className="ln-topbar">
+    {/* Brand */}
+    <div className="flex items-center gap-3">
+      <div
+        className="w-7 h-7 rounded-lg flex items-center justify-center"
+        style={{ background: "#5e6ad2" }}
+      >
+        <Package className="w-3.5 h-3.5 text-white" />
       </div>
-      <div className="flex flex-wrap gap-2">
-        {isAdmin && (
-          <Button variant="default" size="sm" onClick={onNavigateAdmin}>
-            <Shield className="h-4 w-4 mr-2" />
-            Dashboard Admin
-          </Button>
-        )}
-        <Button variant="outline" size="sm" onClick={onSignOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Déconnexion
-        </Button>
-      </div>
+      <span
+        className="text-sm font-semibold tracking-tight"
+        style={{ color: "#1a1a1e", letterSpacing: "-0.28px", fontWeight: 590 }}
+      >
+        Inventaire CIEL
+      </span>
+      {isAdmin && (
+        <span
+          className="text-xs px-2 py-0.5 rounded-full border"
+          style={{
+            fontSize: "11px",
+            fontWeight: 510,
+            color: "#5e6ad2",
+            background: "rgba(94,106,210,0.08)",
+            border: "1px solid rgba(94,106,210,0.2)",
+            letterSpacing: "-0.1px",
+          }}
+        >
+          Admin
+        </span>
+      )}
+    </div>
+
+    {/* Right side */}
+    <div className="flex items-center gap-3">
+      <span
+        className="text-xs hidden sm:block"
+        style={{ color: "#8a8f98", letterSpacing: "-0.13px", fontWeight: 400 }}
+      >
+        {email}
+      </span>
+      <button
+        onClick={onSignOut}
+        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border transition-all duration-100"
+        style={{
+          color: "#62666d",
+          background: "#ffffff",
+          border: "1px solid #e6e6e6",
+          fontWeight: 510,
+          letterSpacing: "-0.13px",
+          fontSize: "13px",
+          cursor: "pointer",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f5";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "#ffffff";
+        }}
+      >
+        <LogOut className="w-3.5 h-3.5" />
+        <span className="hidden sm:inline">Déconnexion</span>
+      </button>
     </div>
   </header>
 ));
-Header.displayName = "Header";
+Topbar.displayName = "Topbar";
 
-// Loading Spinner
+// ── Loading Spinner ──────────────────────────────────────────────────────────
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-muted">
-    <div className="bg-card border border-border rounded-xl p-8 flex flex-col items-center gap-4 shadow-lg">
-      <div className="w-10 h-10 rounded-full border-3 border-muted-foreground/30 border-t-foreground animate-spin" />
-      <p className="text-base font-medium text-foreground">Chargement...</p>
+  <div
+    className="min-h-screen flex items-center justify-center"
+    style={{ background: "#f7f8f8" }}
+  >
+    <div
+      className="flex flex-col items-center gap-4 p-10 rounded-xl"
+      style={{
+        background: "#ffffff",
+        border: "1px solid #e6e6e6",
+        boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px, rgba(0,0,0,0.04) 0px 2px 4px 0px",
+      }}
+    >
+      <div
+        className="w-8 h-8 rounded-full border-2 animate-spin"
+        style={{ borderColor: "#e6e6e6", borderTopColor: "#5e6ad2" }}
+      />
+      <p className="text-sm" style={{ color: "#62666d", fontWeight: 510, letterSpacing: "-0.13px" }}>
+        Chargement…
+      </p>
     </div>
   </div>
 );
 
+// ── Main page ────────────────────────────────────────────────────────────────
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
   const { equipment, isLoading, addEquipmentAsync, updateEquipment, deleteEquipment } = useEquipment(user);
   const { isAdmin, loading: roleLoading } = useUserRole(user?.id);
-  
+
   const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -81,9 +136,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
+    if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
   const handleAddEquipment = useCallback(async (data: Partial<Equipment>) => {
@@ -102,8 +155,6 @@ const Index = () => {
     if (!editingEquipment) return;
     try {
       updateEquipment({ id: editingEquipment.id, data });
-      setEditingEquipment(null);
-      setShowForm(false);
       toast.success("Matériel mis à jour avec succès");
     } catch (error) {
       console.error("[Index] Update equipment error:", error);
@@ -124,7 +175,7 @@ const Index = () => {
 
   const handleGenerateQRSheet = useCallback(async () => {
     if (equipment.length === 0) {
-      toast.error("Veuillez ajouter des équipements avant de générer les étiquettes");
+      toast.error("Ajoutez des équipements avant de générer les étiquettes");
       return;
     }
     try {
@@ -136,176 +187,208 @@ const Index = () => {
     }
   }, [equipment]);
 
-  const handleEquipmentClick = useCallback((equipment: Equipment) => {
-    setSelectedEquipment(equipment);
+  const handleEquipmentClick = useCallback((eq: Equipment) => {
+    setSelectedEquipment(eq);
   }, []);
 
   const handleSignOut = useCallback(async () => {
     await signOut();
   }, [signOut]);
 
-  const handleNavigateAdmin = useCallback(() => {
-    navigate("/admin");
-  }, [navigate]);
-
-  if (authLoading || roleLoading) {
-    return <LoadingSpinner />;
-  }
-
+  if (authLoading || roleLoading) return <LoadingSpinner />;
   if (!user) {
-    // Redirect immediately if no user and not loading
     navigate("/auth", { replace: true });
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <Header
-          email={user.email || ""}
-          isAdmin={isAdmin}
-          onNavigateAdmin={handleNavigateAdmin}
-          onSignOut={handleSignOut}
-        />
+    <div className="min-h-screen" style={{ background: "#f7f8f8" }}>
+      <Topbar
+        email={user.email || ""}
+        isAdmin={isAdmin}
+        onSignOut={handleSignOut}
+      />
 
+      {/* Page content */}
+      <div className="max-w-[1280px] mx-auto px-6 py-8">
+
+        {/* Page header row */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1
+              className="text-2xl font-semibold"
+              style={{ color: "#1a1a1e", fontWeight: 590, letterSpacing: "-0.48px", lineHeight: 1.2 }}
+            >
+              Tableau de bord
+            </h1>
+            <p
+              className="text-sm mt-1"
+              style={{ color: "#8a8f98", letterSpacing: "-0.13px" }}
+            >
+              {equipment.length} équipement{equipment.length !== 1 ? "s" : ""} au total
+            </p>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="ln-btn-primary"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Ajouter
+          </button>
+        </div>
+
+        {/* Tab navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="glass-card p-1 h-auto flex flex-wrap sm:flex-nowrap justify-center gap-2 w-full overflow-x-auto">
-            <TabsTrigger
-              value="dashboard"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 px-4 flex-1 sm:flex-initial flex-shrink-0 min-w-[120px] sm:min-w-[140px] justify-center items-center transition-all duration-200 hover:bg-muted/50"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden sm:inline">Tableau de bord</span>
+          <TabsList
+            className="ln-tabs h-auto w-auto overflow-x-auto"
+            style={{ display: "flex", flexWrap: "wrap", gap: "2px" }}
+          >
+            <TabsTrigger value="dashboard" className="ln-tab">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span>Tableau de bord</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="inventory"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 px-4 flex-1 sm:flex-initial flex-shrink-0 min-w-[120px] sm:min-w-[140px] justify-center items-center transition-all duration-200 hover:bg-muted/50"
-            >
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Inventaire</span>
+            <TabsTrigger value="inventory" className="ln-tab">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Inventaire</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="scanner"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 px-4 flex-1 sm:flex-initial flex-shrink-0 min-w-[120px] sm:min-w-[140px] justify-center items-center transition-all duration-200 hover:bg-muted/50"
-            >
-              <ScanLine className="h-4 w-4" />
-              <span className="hidden sm:inline">Scanner QR</span>
+            <TabsTrigger value="scanner" className="ln-tab">
+              <ScanLine className="h-3.5 w-3.5" />
+              <span>Scanner QR</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="ai-scanner"
-              className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 px-4 flex-1 sm:flex-initial flex-shrink-0 min-w-[120px] sm:min-w-[140px] justify-center items-center transition-all duration-200 hover:bg-muted/50"
-            >
-              <Sparkles className="h-4 w-4 text-amber-500" />
-              <span className="hidden sm:inline">Scanner IA</span>
+            <TabsTrigger value="ai-scanner" className="ln-tab">
+              <Sparkles className="h-3.5 w-3.5" style={{ color: "#f79009" }} />
+              <span>Scanner IA</span>
             </TabsTrigger>
             {isAdmin && (
-              <TabsTrigger
-                value="admin"
-                className="gap-2 data-[state=active]:bg-foreground data-[state=active]:text-background rounded-lg py-2.5 px-4 flex-1 sm:flex-initial flex-shrink-0 min-w-[120px] sm:min-w-[140px] justify-center items-center transition-all duration-200 hover:bg-muted/50"
-              >
-                <Shield className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin</span>
+              <TabsTrigger value="admin" className="ln-tab">
+                <Shield className="h-3.5 w-3.5" />
+                <span>Admin</span>
               </TabsTrigger>
             )}
           </TabsList>
 
+          {/* ── Dashboard ── */}
           <TabsContent value="dashboard" className="animate-fade-in">
-            <Dashboard 
-              equipment={equipment} 
+            <Dashboard
+              equipment={equipment}
               isLoading={isLoading}
               onAddEquipment={() => setShowForm(true)}
             />
           </TabsContent>
 
-          <TabsContent value="inventory" className="space-y-4 animate-fade-in">
-            <div className="glass-card p-4 flex flex-wrap gap-3">
-              <Button onClick={() => setShowForm(true)} className="gap-2">
-                <Plus className="h-4 w-4" />
+          {/* ── Inventory ── */}
+          <TabsContent value="inventory" className="animate-fade-in space-y-4">
+            {/* Toolbar */}
+            <div
+              className="flex flex-wrap gap-2 p-3 rounded-lg"
+              style={{ background: "#ffffff", border: "1px solid #e6e6e6", boxShadow: "rgba(0,0,0,0.04) 0px 2px 4px 0px" }}
+            >
+              <button onClick={() => setShowForm(true)} className="ln-btn-primary">
+                <Plus className="w-3.5 h-3.5" />
                 Ajouter
-              </Button>
-              <Button variant="outline" onClick={handleExportCSV} className="gap-2">
-                <Download className="h-4 w-4" />
+              </button>
+              <button onClick={handleExportCSV} className="ln-btn-ghost">
+                <Download className="w-3.5 h-3.5" />
                 Exporter CSV
-              </Button>
+              </button>
               <ImportCSVButton />
-              <Button variant="outline" onClick={handleGenerateQRSheet} className="gap-2">
-                <FileText className="h-4 w-4" />
+              <button onClick={handleGenerateQRSheet} className="ln-btn-ghost">
+                <FileText className="w-3.5 h-3.5" />
                 Étiquettes QR
-              </Button>
+              </button>
             </div>
 
             {isLoading ? (
-              <div className="glass-card p-12 flex justify-center">
-                <div className="w-8 h-8 rounded-full border-2 border-foreground/20 border-t-foreground animate-spin" />
+              <div
+                className="flex justify-center p-12 rounded-lg"
+                style={{ background: "#ffffff", border: "1px solid #e6e6e6" }}
+              >
+                <div
+                  className="w-7 h-7 rounded-full border-2 animate-spin"
+                  style={{ borderColor: "#e6e6e6", borderTopColor: "#5e6ad2" }}
+                />
               </div>
             ) : (
               <EquipmentList
                 equipment={equipment}
-                onEdit={(eq) => {
-                  setEditingEquipment(eq);
-                  setShowForm(true);
-                }}
+                onEdit={(eq) => { setEditingEquipment(eq); setShowForm(true); }}
                 onDelete={handleDeleteEquipment}
                 onEquipmentClick={handleEquipmentClick}
               />
             )}
           </TabsContent>
 
-          <TabsContent value="scanner" className="space-y-4 animate-fade-in">
-            <div className="flex justify-center">
-              <Button onClick={() => setShowScanner(!showScanner)} size="lg" className="gap-2">
-                <ScanLine className="h-5 w-5" />
+          {/* ── QR Scanner ── */}
+          <TabsContent value="scanner" className="animate-fade-in space-y-4">
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setShowScanner(!showScanner)}
+                className="ln-btn-primary"
+                style={{ padding: "10px 20px", fontSize: "14px" }}
+              >
+                <ScanLine className="w-4 h-4" />
                 {showScanner ? "Fermer le scanner QR" : "Ouvrir le scanner QR"}
-              </Button>
+              </button>
             </div>
             {showScanner && (
-              <div className="max-w-2xl mx-auto">
+              <div className="max-w-2xl mx-auto animate-fade-in">
                 <QRScanner equipment={equipment} />
               </div>
             )}
           </TabsContent>
 
+          {/* ── AI Scanner ── */}
           <TabsContent value="ai-scanner" className="animate-fade-in">
             <AIScanner />
           </TabsContent>
 
+          {/* ── Admin ── */}
           {isAdmin && (
             <TabsContent value="admin" className="animate-fade-in">
               <AdminPanel />
             </TabsContent>
           )}
         </Tabs>
-
-        <Dialog open={showForm} onOpenChange={(open) => {
-    setShowForm(open);
-    if (!open) {
-      setEditingEquipment(null);
-    }
-  }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto glass-card">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEquipment ? "Modifier le matériel" : "Ajouter du matériel"}
-              </DialogTitle>
-            </DialogHeader>
-            <EquipmentForm
-              key={editingEquipment ? editingEquipment.id : "new-equipment"}
-              equipment={editingEquipment}
-              onSubmit={editingEquipment ? handleUpdateEquipment : handleAddEquipment}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingEquipment(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-
-        <EquipmentDetailModal
-          equipment={selectedEquipment}
-          open={!!selectedEquipment}
-          onOpenChange={(open) => !open && setSelectedEquipment(null)}
-        />
       </div>
+
+      {/* ── Equipment Form Dialog ── */}
+      <Dialog
+        open={showForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) setEditingEquipment(null);
+        }}
+      >
+        <DialogContent
+          className="max-w-4xl max-h-[90vh] overflow-y-auto"
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e6e6e6",
+            borderRadius: "12px",
+            boxShadow: "rgba(0,0,0,0.08) 0px 0px 0px 1px, rgba(0,0,0,0.12) 0px 8px 32px",
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle
+              style={{ fontWeight: 590, letterSpacing: "-0.3px", color: "#1a1a1e", fontSize: "16px" }}
+            >
+              {editingEquipment ? "Modifier le matériel" : "Ajouter du matériel"}
+            </DialogTitle>
+          </DialogHeader>
+          <EquipmentForm
+            key={editingEquipment ? editingEquipment.id : "new-equipment"}
+            equipment={editingEquipment}
+            onSubmit={editingEquipment ? handleUpdateEquipment : handleAddEquipment}
+            onCancel={() => { setShowForm(false); setEditingEquipment(null); }}
+          />
+        </DialogContent>
+      </Dialog>
+
+      <EquipmentDetailModal
+        equipment={selectedEquipment}
+        open={!!selectedEquipment}
+        onOpenChange={(open) => !open && setSelectedEquipment(null)}
+      />
     </div>
   );
 };
