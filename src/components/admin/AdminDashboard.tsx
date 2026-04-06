@@ -58,37 +58,52 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <Tabs defaultValue="stats" className="space-y-4">
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
-          <TabsTrigger value="stats" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            <span className="hidden sm:inline">Statistiques</span>
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            <span className="hidden sm:inline">Utilisateurs</span>
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            <span className="hidden sm:inline">Logs</span>
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            <span className="hidden sm:inline">Rôles</span>
-          </TabsTrigger>
-          <TabsTrigger value="activity" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            <span className="hidden sm:inline">Activité</span>
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Paramètres</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="stats">
-          <AdminStats />
-        </TabsContent>
+      <Tabs defaultValue="users" className="space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <TabsList 
+            className="ln-tabs"
+            style={{ border: "1px solid #e6e6e6", borderRadius: "8px", padding: "4px", display: "flex", gap: "2px" }}
+          >
+            <TabsTrigger value="users" className="ln-tab" style={{ gap: "6px" }}>
+              <Users className="h-4 w-4" />
+              Utilisateurs (7)
+            </TabsTrigger>
+            <TabsTrigger value="logs" className="ln-tab" style={{ gap: "6px" }}>
+              <FileText className="h-4 w-4" />
+              Logs (200)
+            </TabsTrigger>
+            <TabsTrigger value="stats" className="ln-tab" style={{ gap: "6px" }}>
+              <BarChart3 className="h-4 w-4" />
+              Statistiques
+            </TabsTrigger>
+            <TabsTrigger value="roles" className="ln-tab" style={{ gap: "6px" }}>
+              <Shield className="h-4 w-4" />
+              Rôles
+            </TabsTrigger>
+            <TabsTrigger value="activity" className="ln-tab" style={{ gap: "6px" }}>
+              <Activity className="h-4 w-4" />
+              Activité
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="ln-tab" style={{ gap: "6px" }}>
+              <Settings className="h-4 w-4" />
+              Paramètres
+            </TabsTrigger>
+          </TabsList>
+          <div className="flex gap-2">
+            <button 
+              className="ln-btn-ghost"
+              style={{ border: "1px solid #e6e6e6", borderRadius: "6px", padding: "8px 12px" }}
+              onClick={() => window.location.reload()}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                <path d="M21 3v5h-5"></path>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                <path d="M8 16H3v5"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <TabsContent value="users">
           <AdminUsersOptimized />
@@ -96,6 +111,10 @@ export default function AdminDashboard() {
 
         <TabsContent value="logs">
           <AdminLogs />
+        </TabsContent>
+
+        <TabsContent value="stats">
+          <AdminStats />
         </TabsContent>
 
         <TabsContent value="roles">

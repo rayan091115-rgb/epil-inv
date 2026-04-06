@@ -212,60 +212,44 @@ const Index = () => {
       {/* Page content */}
       <div className="max-w-[1280px] mx-auto px-6 py-8">
 
-        {/* Page header row */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1
-              className="text-2xl font-semibold"
-              style={{ color: "#1a1a1e", fontWeight: 590, letterSpacing: "-0.48px", lineHeight: 1.2 }}
-            >
-              Tableau de bord
-            </h1>
-            <p
-              className="text-sm mt-1"
-              style={{ color: "#8a8f98", letterSpacing: "-0.13px" }}
-            >
-              {equipment.length} équipement{equipment.length !== 1 ? "s" : ""} au total
-            </p>
-          </div>
-          <button
-            onClick={() => setShowForm(true)}
-            className="ln-btn-primary"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Ajouter
-          </button>
-        </div>
-
-        {/* Tab navigation */}
+        {/* Tab navigation avec bouton à droite */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList
-            className="ln-tabs h-auto w-auto overflow-x-auto"
-            style={{ display: "flex", flexWrap: "wrap", gap: "2px" }}
-          >
-            <TabsTrigger value="dashboard" className="ln-tab">
-              <LayoutDashboard className="h-3.5 w-3.5" />
-              <span>Tableau de bord</span>
-            </TabsTrigger>
-            <TabsTrigger value="inventory" className="ln-tab">
-              <FileText className="h-3.5 w-3.5" />
-              <span>Inventaire</span>
-            </TabsTrigger>
-            <TabsTrigger value="scanner" className="ln-tab">
-              <ScanLine className="h-3.5 w-3.5" />
-              <span>Scanner QR</span>
-            </TabsTrigger>
-            <TabsTrigger value="ai-scanner" className="ln-tab">
-              <Sparkles className="h-3.5 w-3.5" style={{ color: "#f79009" }} />
-              <span>Scanner IA</span>
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="admin" className="ln-tab">
-                <Shield className="h-3.5 w-3.5" />
-                <span>Admin</span>
+          <div className="flex items-center justify-between mb-8 gap-4 flex-wrap">
+            <TabsList
+              className="ln-tabs h-auto overflow-x-auto"
+              style={{ display: "flex", flexWrap: "wrap", gap: "2px", border: "1px solid #e6e6e6", borderRadius: "8px", padding: "4px" }}
+            >
+              <TabsTrigger value="dashboard" className="ln-tab">
+                <LayoutDashboard className="h-3.5 w-3.5" />
+                <span>Tableau de bord</span>
               </TabsTrigger>
-            )}
-          </TabsList>
+              <TabsTrigger value="inventory" className="ln-tab">
+                <FileText className="h-3.5 w-3.5" />
+                <span>Inventaire</span>
+              </TabsTrigger>
+              <TabsTrigger value="scanner" className="ln-tab">
+                <ScanLine className="h-3.5 w-3.5" />
+                <span>Scanner QR</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai-scanner" className="ln-tab">
+                <Sparkles className="h-3.5 w-3.5" style={{ color: "#f79009" }} />
+                <span>Scanner IA</span>
+              </TabsTrigger>
+              {isAdmin && (
+                <TabsTrigger value="admin" className="ln-tab">
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>Admin</span>
+                </TabsTrigger>
+              )}
+            </TabsList>
+            <button
+              onClick={() => setShowForm(true)}
+              className="ln-btn-primary"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Ajouter
+            </button>
+          </div>
 
           {/* ── Dashboard ── */}
           <TabsContent value="dashboard" className="animate-fade-in">
